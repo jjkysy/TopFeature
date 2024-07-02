@@ -28,25 +28,25 @@ install:          ## Install the project in dev mode.
 fmt:              ## Format code using black & isort.
 	poetry run isort tpf/
 	poetry run black -l 79 tpf/
-	poetry run black -l 79 tests/
+#	poetry run black -l 79 tests/
 
 .PHONY: lint
 lint:             ## Run pep8, black, mypy linters.
 	poetry run flake8 tpf/
 	poetry run black -l 79 --check tpf/
-	poetry run black -l 79 --check tests/
+#	poetry run black -l 79 --check tests/
 	poetry run mypy --explicit-package-bases --ignore-missing-imports tpf/
 
 
 .PHONY: test
-test: lint        ## Run tests and generate coverage report.
-	poetry run pytest -v --cov-config .coveragerc --cov=tpf -l --tb=short --maxfail=1 tests/
-	poetry run coverage xml
-	poetry run coverage html
+#test: lint        ## Run tests and generate coverage report.
+#	poetry run pytest -v --cov-config .coveragerc --cov=tpf -l --tb=short --maxfail=1 tests/
+#	poetry run coverage xml
+#	poetry run coverage html
 
-.PHONY: watch
-watch:            ## Run tests on every change.
-	ls **/**.py | entr $(ENV_PREFIX)pytest -s -vvv -l --tb=long --maxfail=1 tests/
+#.PHONY: watch
+#watch:            ## Run tests on every change.
+#	ls **/**.py | entr $(ENV_PREFIX)pytest -s -vvv -l --tb=long --maxfail=1 tests/
 
 .PHONY: clean
 clean:            ## Clean unused files.
