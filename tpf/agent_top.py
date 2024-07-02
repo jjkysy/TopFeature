@@ -9,9 +9,7 @@ from interface import GraphData
 
 class AgentGraphGenerator:
     @classmethod
-    def generate_trees(
-        cls, n_node: int, n_graph: int
-    ) -> List[GraphData]:
+    def generate_trees(cls, n_node: int, n_graph: int) -> List[GraphData]:
         tree_graph = []
         for i in range(n_graph):
             tree = nx.gn_graph(n_node, create_using=nx.DiGraph)

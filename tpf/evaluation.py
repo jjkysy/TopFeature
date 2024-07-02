@@ -1,10 +1,10 @@
+import pdb
 import pickle
 from typing import Dict, List
 
 import networkx as nx
 import numpy as np
 from interface import GraphFeatures
-import pdb
 
 
 class AgentFeatures:
