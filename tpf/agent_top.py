@@ -1,12 +1,12 @@
-#################################################################################
+##############################################################################
 # Randomly create agent topologies, every type 100, 100 node
 # For now, we define the agent topologies as follows:
 # Decentralized: meshes, chains, shared-pools
 # Centralized: stars, trees (can be regard as specific type of layered)
-#################################################################################
+##############################################################################
 
 import pickle
-from typing import List
+from typing import List, Callable, Dict
 import random
 
 import networkx as nx
@@ -27,11 +27,9 @@ class AgentGraphGenerator:
                     GraphData(graph=directed_mesh, name=f"mesh_{i}")
                 )
         return mesh_graph
-    
+
     @classmethod
-    def generate_chains(
-        cls, n_node: int, n_graph: int
-    ) -> List[GraphData]:
+    def generate_chains(cls, n_node: int, n_graph: int) -> List[GraphData]:
         chain_graph = []
         for i in range(n_graph):
             chain = nx.path_graph(n_node)
@@ -41,11 +39,9 @@ class AgentGraphGenerator:
                     GraphData(graph=directed_chain, name=f"chain_{i}")
                 )
         return chain_graph
-    
+
     @classmethod
-    def generate_pools(
-        cls, n_node: int, n_graph: int
-    ) -> List[GraphData]:
+    def generate_pools(cls, n_node: int, n_graph: int) -> List[GraphData]:
         # shared-pool is a star with a fully-connected sub grpah as center
         # we set the number of centers as 5% of the total nodes
         pool_graph = []
@@ -57,25 +53,21 @@ class AgentGraphGenerator:
                 pool.add_edge(j, center_node)
                 pool.add_edge(center_node, j)
             if nx.is_strongly_connected(pool):
-                pool_graph.append(
-                    GraphData(graph=pool, name=f"pool_{i}")
-                )
+                pool_graph.append(GraphData(graph=pool, name=f"pool_{i}"))
         return pool_graph
 
     @classmethod
-    def generate_stars(
-        cls, n_node: int, n_graph: int
-    ) -> List[GraphData]:
+    def generate_stars(cls, n_node: int, n_graph: int) -> List[GraphData]:
         star_graph = []
         for i in range(n_graph):
-            star = nx.star_graph(n_node-1) # since star_graph(n_node) has n_node+1 nodes
+            star = nx.star_graph(n_node - 1)
             directed_star = nx.DiGraph(star)
             if nx.is_strongly_connected(directed_star):
                 star_graph.append(
                     GraphData(graph=directed_star, name=f"star_{i}")
                 )
         return star_graph
-    
+
     @classmethod
     def generate_trees(cls, n_node: int, n_graph: int) -> List[GraphData]:
         tree_graph = []
@@ -85,10 +77,12 @@ class AgentGraphGenerator:
                 tree_graph.append(GraphData(graph=tree, name=f"tree_{i}"))
         return tree_graph
 
+
 if __name__ == "__main__":
     n_nodes_in_topologies = 100
     n_topologies = 100
-    generators = {
+    GeneratorFunction = Callable[[int, int], List[GraphData]]
+    generators: Dict[str, GeneratorFunction] = {
         "mesh_test.pkl": AgentGraphGenerator.generate_meshes,
         "chain_test.pkl": AgentGraphGenerator.generate_chains,
         "pool_test.pkl": AgentGraphGenerator.generate_pools,

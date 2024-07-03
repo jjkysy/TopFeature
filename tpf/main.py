@@ -2,9 +2,8 @@ import pickle
 from typing import List
 from agent_top import AgentGraphGenerator as Ag
 from evaluation import AgentFeatures as Af
-from plot import GraphPlotter as Gp
-from plot import GraphFeaturesPlotter as Gfp
-import csv
+from fig_plot import GraphPlotter as Gp
+from fig_plot import GraphFeaturesPlotter as Gfp
 import os
 
 
