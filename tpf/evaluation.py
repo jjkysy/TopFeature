@@ -4,6 +4,8 @@ from typing import Dict, List
 
 import networkx as nx
 import numpy as np
+import os
+import csv
 from interface import GraphFeatures
 
 
@@ -99,15 +101,11 @@ def save_features(features, filename):
 
 
 if __name__ == "__main__":
+    graph_types = ["trees", "meshes", "stars", "pools", "chains"]
     try:
-        trees = load_graphs("tree_test.pkl")
-        meshes = load_graphs("mesh_test.pkl")
+        for graph_type in graph_types:
+            graphs = load_graphs(f"topo/{graph_type}_test.pkl")
+            features = AgentFeatures.calculate_features(graphs)
+            save_features(features, f"topo_fea/{graph_type}_features_test.pkl")
     except FileNotFoundError:
         pass
-    else:
-        tree_features = AgentFeatures.calculate_features(trees)
-        pdb.set_trace()
-        mesh_features = AgentFeatures.calculate_features(meshes)
-
-        save_features(tree_features, "tree_features_test.pkl")
-        save_features(mesh_features, "mesh_features_test.pkl")
