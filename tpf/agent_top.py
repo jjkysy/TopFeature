@@ -2,7 +2,7 @@
 # Randomly create agent topologies, every type 100, 100 node
 # For now, we define the agent topologies as follows:
 # Decentralized: meshes, chains, shared-pools
-# Centralized: stars, trees (can be regard as specific type of layered)
+# Centralized: stars, hierarchicals (tree is a special case of hierarchical)
 ##############################################################################
 
 import pickle
@@ -69,13 +69,20 @@ class AgentGraphGenerator:
         return star_graph
 
     @classmethod
-    def generate_trees(cls, n_node: int, n_graph: int) -> List[GraphData]:
-        tree_graph = []
+    def generate_hierarchicals(
+        cls, n_node: int, n_graph: int
+    ) -> List[GraphData]:
+        # simplified as generated a random tree with n_node nodes
+        hierarchical_graph = []
         for i in range(n_graph):
-            tree = nx.gn_graph(n_node, create_using=nx.DiGraph)
-            if nx.is_strongly_connected(tree):
-                tree_graph.append(GraphData(graph=tree, name=f"tree_{i}"))
-        return tree_graph
+            hierarchical = nx.random_tree(n_node, create_using=nx.DiGraph())
+            for edge in list(hierarchical.edges):
+                hierarchical.add_edge(edge[1], edge[0])
+            if nx.is_strongly_connected(hierarchical):
+                hierarchical_graph.append(
+                    GraphData(graph=hierarchical, name=f"hierarchical_{i}")
+                )
+        return hierarchical_graph
 
 
 if __name__ == "__main__":
@@ -87,7 +94,7 @@ if __name__ == "__main__":
         "chain_test.pkl": AgentGraphGenerator.generate_chains,
         "pool_test.pkl": AgentGraphGenerator.generate_pools,
         "star_test.pkl": AgentGraphGenerator.generate_stars,
-        "tree_test.pkl": AgentGraphGenerator.generate_trees,
+        "hierarchical_test.pkl": AgentGraphGenerator.generate_hierarchicals,
     }
     path = "topo/"
     for filename, generator in generators.items():

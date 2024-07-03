@@ -20,10 +20,10 @@ def load_file(filename):
 
 n_topologies = 100
 n_nodes_in_topologies = 100
-topologies = ["trees", "meshes", "chains", "pools", "stars"]
+topologies = ["hierarchicals", "meshes", "chains", "pools", "stars"]
 
 generator_functions = {
-    "trees": Ag.generate_trees,
+    "hierarchicals": Ag.generate_hierarchicals,
     "meshes": Ag.generate_meshes,
     "chains": Ag.generate_chains,
     "pools": Ag.generate_pools,

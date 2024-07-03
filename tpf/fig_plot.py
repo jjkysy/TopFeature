@@ -57,6 +57,7 @@ class GraphFeaturesPlotter:
         plt.close()
 
     # TODO: add more plots for other features
+    # TODO: analysis and compare the features for different topologies
 
     @classmethod
     def plot_features(cls, features: List[GraphFeatures], path: str):

@@ -98,7 +98,7 @@ def save_features(features, filename):
 
 
 if __name__ == "__main__":
-    graph_types = ["trees", "meshes", "stars", "pools", "chains"]
+    graph_types = ["hierarchicals", "meshes", "stars", "pools", "chains"]
     try:
         for graph_type in graph_types:
             graphs = load_graphs(f"topo/{graph_type}_test.pkl")
