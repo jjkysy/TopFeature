@@ -46,6 +46,13 @@ class GraphPlotter:
 
 # The second part, plotting the graph features with scatter plots
 class GraphFeaturesPlotter:
+    centrality_mapping = {
+        "Average Degree Centrality": "degree_centrality",
+        "Average Betweenness Centrality": "betweenness_centrality",
+        "Average Closeness Centrality": "closeness_centrality",
+        "Average Second Order Centrality": "second_order_centrality",
+    }
+
     @classmethod
     def plot_centrality_features(cls, feature: GraphFeatures, path: str):
         plt.figure(figsize=(12, 4))
@@ -53,10 +60,11 @@ class GraphFeaturesPlotter:
             ("Degree Centrality", feature.degree_centrality),
             ("Betweenness Centrality", feature.betweenness_centrality),
             ("Closeness Centrality", feature.closeness_centrality),
+            ("Second Order Centrality", feature.second_order_centrality),
         ]
 
         for i, (title, centrality) in enumerate(centrality_measures, start=1):
-            plt.subplot(1, 3, i)
+            plt.subplot(1, 4, i)
             plt.scatter(list(centrality.keys()), list(centrality.values()))
             plt.title(title)
             plt.xlabel("Node")
@@ -68,7 +76,14 @@ class GraphFeaturesPlotter:
         plt.close()
 
     @classmethod
-    def plot_size_features_for_topology(
+    def plot_features_within_one_graph(
+        cls, features: List[GraphFeatures], path: str
+    ):
+        for feature_set in features[:1]:
+            cls.plot_centrality_features(feature_set, path)
+
+    @classmethod
+    def plot_size_features_for_topologies(
         cls, features: List[GraphFeatures], path: str
     ):
         name = features[0].name
@@ -83,65 +98,6 @@ class GraphFeaturesPlotter:
         plt.savefig(f"{path}{name}_diameter.png")
         plt.close()
 
-    # TODO: add more plots for SoC and clustering coefficient
-    # TODO: analysis and compare the features for different topologies
-
-    @classmethod
-    def plot_features_within_one_graph(
-        cls, features: List[GraphFeatures], path: str
-    ):
-        for feature_set in features[:1]:
-            cls.plot_centrality_features(feature_set, path)
-
-    @classmethod
-    def plot_centrality_features_for_topology(
-        cls, features: List[GraphFeatures], path: str
-    ):
-        # calculate the average stat for all nodes within 1 graph
-        name = features[0].name
-        average_degree_centralities = []
-        average_betweenness_centralities = []
-        average_closeness_centralities = []
-
-        for feature_set in features:
-            avg_degree = sum(feature_set.degree_centrality.values()) / len(
-                feature_set.degree_centrality
-            )
-            average_degree_centralities.append(avg_degree)
-            avg_betweenness = sum(
-                feature_set.betweenness_centrality.values()
-            ) / len(feature_set.betweenness_centrality)
-            average_betweenness_centralities.append(avg_betweenness)
-            avg_closeness = sum(
-                feature_set.closeness_centrality.values()
-            ) / len(feature_set.closeness_centrality)
-            average_closeness_centralities.append(avg_closeness)
-
-        plt.figure(figsize=(12, 4))
-        centrality_measures = [
-            ("Average Degree Centrality", average_degree_centralities),
-            (
-                "Average Betweenness Centrality",
-                average_betweenness_centralities,
-            ),
-            ("Average Closeness Centrality", average_closeness_centralities),
-        ]
-
-        graph_numbers = list(range(1, len(features) + 1))
-        for i, (title, centralities) in enumerate(
-            centrality_measures, start=1
-        ):
-            plt.subplot(1, 3, i)
-            plt.scatter(graph_numbers, centralities)
-            plt.title(title)
-            plt.xlabel("Graph Number")
-            plt.ylabel("Average Centrality")
-
-        plt.tight_layout()
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        plt.savefig(f"{path}{name}_average_centrality.png")
-        plt.close()
-
     @classmethod
     def plot_centrality_features_for_topologies(
         cls, features_dict: Dict[str, List[GraphFeatures]], path: str
@@ -151,35 +107,28 @@ class GraphFeaturesPlotter:
             the value is the list of GraphFeatures.
         :param path: the path to save the plots.
         """
-        plt.figure(figsize=(12, 4))
-        colors = ["b", "g", "r", "c", "m", "y", "k"]  # 颜色列表
-        centrality_titles = [
-            "Average Degree Centrality",
-            "Average Betweenness Centrality",
-            "Average Closeness Centrality",
-        ]
+        plt.figure(figsize=(20, 5))
+        colors = ["b", "g", "r", "c", "m", "y", "k"]
 
-        for i, centrality_title in enumerate(centrality_titles, start=1):
-            plt.subplot(1, 3, i)
+        def calculate_average_centrality(feature_set, centrality_type):
+            return sum(getattr(feature_set, centrality_type).values()) / len(
+                getattr(feature_set, centrality_type)
+            )
+
+        for i, centrality_title in enumerate(
+            cls.centrality_mapping.keys(), start=1
+        ):
+            plt.subplot(1, 4, i)
             for color, (topology_name, features) in zip(
                 colors, features_dict.items()
             ):
-                average_centralities = []
-                for feature_set in features:
-                    if centrality_title == "Average Degree Centrality":
-                        avg_centrality = sum(
-                            feature_set.degree_centrality.values()
-                        ) / len(feature_set.degree_centrality)
-                    elif centrality_title == "Average Betweenness Centrality":
-                        avg_centrality = sum(
-                            feature_set.betweenness_centrality.values()
-                        ) / len(feature_set.betweenness_centrality)
-                    else:  # Average Closeness Centrality
-                        avg_centrality = sum(
-                            feature_set.closeness_centrality.values()
-                        ) / len(feature_set.closeness_centrality)
-                    average_centralities.append(avg_centrality)
-
+                average_centralities = [
+                    calculate_average_centrality(
+                        feature_set,
+                        cls.centrality_mapping[centrality_title],
+                    )
+                    for feature_set in features
+                ]
                 graph_numbers = list(range(1, len(features) + 1))
                 plt.scatter(
                     graph_numbers,
@@ -189,11 +138,80 @@ class GraphFeaturesPlotter:
                 )
 
             plt.title(centrality_title)
-            plt.xlabel("Graph Number")
+            plt.xlabel("Graph ID")
             plt.ylabel("Average Centrality")
             plt.legend()
 
         plt.tight_layout()
         os.makedirs(os.path.dirname(path), exist_ok=True)
         plt.savefig(f"{path}average_centrality_comparison.png")
+        plt.close()
+
+        # draw another plot with boxplot
+        plt.figure(figsize=(20, 5))
+        for i, centrality_title in enumerate(
+            cls.centrality_mapping.keys(), start=1
+        ):
+            plt.subplot(1, 4, i)
+            data = [
+                [
+                    calculate_average_centrality(
+                        feature_set,
+                        cls.centrality_mapping[centrality_title],
+                    )
+                    for feature_set in features
+                ]
+                for features in features_dict.values()
+            ]
+            plt.boxplot(data, labels=features_dict.keys())
+            plt.title(centrality_title)
+            plt.ylabel("Average Centrality")
+
+        plt.tight_layout()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        plt.savefig(f"{path}average_centrality_boxplot.png")
+        plt.close()
+
+    @classmethod
+    def plot_size_and_centrality_for_topologies(
+        cls, features_dict: Dict[str, List[GraphFeatures]], path: str
+    ):
+        plt.figure(figsize=(20, 5))
+        colors = ["b", "g", "r", "c", "m", "y", "k"]
+
+        def calculate_average_centrality(feature_set, centrality_type):
+            return sum(getattr(feature_set, centrality_type).values()) / len(
+                getattr(feature_set, centrality_type)
+            )
+
+        for i, centrality_title in enumerate(
+            cls.centrality_mapping.keys(), start=1
+        ):
+            plt.subplot(1, 4, i)
+            for color, (topology_name, features) in zip(
+                colors, features_dict.items()
+            ):
+                average_centralities = [
+                    calculate_average_centrality(
+                        feature_set,
+                        cls.centrality_mapping[centrality_title],
+                    )
+                    for feature_set in features
+                ]
+                diameters = [feature.diameter for feature in features]
+                plt.scatter(
+                    diameters,
+                    average_centralities,
+                    color=color,
+                    label=topology_name,
+                )
+
+            plt.title(centrality_title)
+            plt.xlabel("Diameter")
+            plt.ylabel("Average Centrality")
+            plt.legend()
+
+        plt.tight_layout()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        plt.savefig(f"{path}diameter_centrality.png")
         plt.close()

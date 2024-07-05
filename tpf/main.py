@@ -53,14 +53,12 @@ for topo in topologies:
 
     # plot features and save
     Gfp.plot_features_within_one_graph(topo_features, graph_fea_plot_path)
-    Gfp.plot_centrality_features_for_topology(
-        topo_features, topo_fea_plot_path
-    )
-    Gfp.plot_size_features_for_topology(topo_features, topo_fea_plot_path)
+    Gfp.plot_size_features_for_topologies(topo_features, topo_fea_plot_path)
     print(f"{topo.capitalize()} Features Plotted.")
 
     print(f"{topo.capitalize()} Done.")
     print("-------------------------------------------------")
+    # pass
 
 # create a: features_dict: Dict[str, List[GraphFeatures]]
 features_dict = {}
@@ -68,3 +66,4 @@ for topo in topologies:
     features = load_file(f"{topo_fea_path}{topo}_features.pkl")
     features_dict[topo] = features
 Gfp.plot_centrality_features_for_topologies(features_dict, topo_fea_plot_path)
+Gfp.plot_size_and_centrality_for_topologies(features_dict, topo_fea_plot_path)
