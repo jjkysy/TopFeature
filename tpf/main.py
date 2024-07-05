@@ -34,12 +34,14 @@ generator_functions = {
 topo_path = "stat/topo/"
 topo_fea_path = "stat/topo_fea/"
 topo_plot_path = "plot/topo_plots/"
+graph_fea_plot_path = "plot/graph_fea_plots/"
 topo_fea_plot_path = "plot/topo_fea_plots/"
+
 
 # generate topologies and save
 for topo in topologies:
     topo_data = generator_functions[topo](n_nodes_in_topologies, n_topologies)
-    save_file(topo_data, f"{topo_path}{topo}_test.pkl")
+    save_file(topo_data, f"{topo_path}{topo}.pkl")
 
     # calculate features and save
     topo_features = Af.calculate_features(topo_data)
@@ -50,8 +52,19 @@ for topo in topologies:
     print(f"{topo.capitalize()} Graphs Plotted.")
 
     # plot features and save
-    topo_features_plot = Gfp.plot_features(topo_features, topo_fea_plot_path)
+    Gfp.plot_features_within_one_graph(topo_features, graph_fea_plot_path)
+    Gfp.plot_centrality_features_for_topology(
+        topo_features, topo_fea_plot_path
+    )
+    Gfp.plot_size_features_for_topology(topo_features, topo_fea_plot_path)
     print(f"{topo.capitalize()} Features Plotted.")
 
     print(f"{topo.capitalize()} Done.")
     print("-------------------------------------------------")
+
+# create a: features_dict: Dict[str, List[GraphFeatures]]
+features_dict = {}
+for topo in topologies:
+    features = load_file(f"{topo_fea_path}{topo}_features.pkl")
+    features_dict[topo] = features
+Gfp.plot_centrality_features_for_topologies(features_dict, topo_fea_plot_path)
