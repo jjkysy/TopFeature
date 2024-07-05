@@ -50,7 +50,10 @@ class GraphFeaturesPlotter:
         "Average Degree Centrality": "degree_centrality",
         "Average Betweenness Centrality": "betweenness_centrality",
         "Average Closeness Centrality": "closeness_centrality",
+        # "Average Edge Betweenness Centrality": "edge_betweenness_centrality",
         "Average Second Order Centrality": "second_order_centrality",
+        "Average Node Independence": "node_independence",
+        "Clustering Coefficient": "clustering_coefficient",
     }
 
     @classmethod
@@ -64,7 +67,7 @@ class GraphFeaturesPlotter:
         ]
 
         for i, (title, centrality) in enumerate(centrality_measures, start=1):
-            plt.subplot(1, 4, i)
+            plt.subplot(2, 3, i)
             plt.scatter(list(centrality.keys()), list(centrality.values()))
             plt.title(title)
             plt.xlabel("Node")
@@ -107,7 +110,7 @@ class GraphFeaturesPlotter:
             the value is the list of GraphFeatures.
         :param path: the path to save the plots.
         """
-        plt.figure(figsize=(20, 5))
+        plt.figure(figsize=(20, 10))
         colors = ["b", "g", "r", "c", "m", "y", "k"]
 
         def calculate_average_centrality(feature_set, centrality_type):
@@ -118,7 +121,7 @@ class GraphFeaturesPlotter:
         for i, centrality_title in enumerate(
             cls.centrality_mapping.keys(), start=1
         ):
-            plt.subplot(1, 4, i)
+            plt.subplot(2, 3, i)
             for color, (topology_name, features) in zip(
                 colors, features_dict.items()
             ):
@@ -148,11 +151,11 @@ class GraphFeaturesPlotter:
         plt.close()
 
         # draw another plot with boxplot
-        plt.figure(figsize=(20, 5))
+        plt.figure(figsize=(20, 10))
         for i, centrality_title in enumerate(
             cls.centrality_mapping.keys(), start=1
         ):
-            plt.subplot(1, 4, i)
+            plt.subplot(2, 3, i)
             data = [
                 [
                     calculate_average_centrality(
@@ -176,7 +179,7 @@ class GraphFeaturesPlotter:
     def plot_size_and_centrality_for_topologies(
         cls, features_dict: Dict[str, List[GraphFeatures]], path: str
     ):
-        plt.figure(figsize=(20, 5))
+        plt.figure(figsize=(20, 10))
         colors = ["b", "g", "r", "c", "m", "y", "k"]
 
         def calculate_average_centrality(feature_set, centrality_type):
@@ -187,7 +190,7 @@ class GraphFeaturesPlotter:
         for i, centrality_title in enumerate(
             cls.centrality_mapping.keys(), start=1
         ):
-            plt.subplot(1, 4, i)
+            plt.subplot(2, 3, i)
             for color, (topology_name, features) in zip(
                 colors, features_dict.items()
             ):

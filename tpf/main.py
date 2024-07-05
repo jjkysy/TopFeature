@@ -53,7 +53,7 @@ for topo in topologies:
 
     # plot features and save
     Gfp.plot_features_within_one_graph(topo_features, graph_fea_plot_path)
-    Gfp.plot_size_features_for_topologies(topo_features, topo_fea_plot_path)
+    # Gfp.plot_size_features_for_topologies(topo_features, topo_fea_plot_path)
     print(f"{topo.capitalize()} Features Plotted.")
 
     print(f"{topo.capitalize()} Done.")
