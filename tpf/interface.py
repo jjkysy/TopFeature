@@ -23,3 +23,10 @@ class GraphFeatures:
     node_independence: Dict[Any, float] = field(default_factory=dict)
     second_order_centrality: Dict[Any, float] = field(default_factory=dict)
     clustering_coefficient: Dict[Any, float] = field(default_factory=dict)
+    average_betweenness_centrality: float = 0
+    average_closeness_centrality: float = 0
+    average_degree_centrality: float = 0
+    average_node_independence: float = 0
+    average_second_order_centrality: float = 0
+    average_clustering_coefficient: float = 0
+    # add more features here (if any)

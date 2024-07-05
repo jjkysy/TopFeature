@@ -66,9 +66,15 @@ class GraphFeaturesPlotter:
         plt.figure(figsize=(12, 4))
         centrality_measures = [
             ("Degree Centrality", feature.degree_centrality),
-            ("Betweenness Centrality", feature.betweenness_centrality),
+            (
+                "Betweenness Centrality",
+                feature.betweenness_centrality,
+            ),
             ("Closeness Centrality", feature.closeness_centrality),
-            ("Second Order Centrality", feature.second_order_centrality),
+            (
+                "Second Order Centrality",
+                feature.second_order_centrality,
+            ),
         ]
 
         for i, (title, centrality) in enumerate(centrality_measures, start=1):
@@ -90,19 +96,14 @@ class TopoFeaturesPlotter:
     def __init__(self, path: str):
         self.plot_storage = PlotStorage(path)
         self.path = path
-        self.centrality_mapping = {
-            "Average Degree Centrality": "degree_centrality",
-            "Average Betweenness Centrality": "betweenness_centrality",
-            "Average Closeness Centrality": "closeness_centrality",
-            "Average Second Order Centrality": "second_order_centrality",
-            "Average Node Independence": "node_independence",
-            "Clustering Coefficient": "clustering_coefficient",
+        self.average_centrality_mapping = {
+            "Avg Degree Centrality": "average_degree_centrality",
+            "Avg Betweenness Centrality": "average_betweenness_centrality",
+            "Avg Closeness Centrality": "average_closeness_centrality",
+            "Avg Second Order Centrality": "average_second_order_centrality",
+            "Avg Node Independence": "average_node_independence",
+            "Clustering Coefficient": "average_clustering_coefficient",
         }
-
-    def calculate_average_centrality(self, feature_set, centrality_type):
-        return sum(getattr(feature_set, centrality_type).values()) / len(
-            getattr(feature_set, centrality_type)
-        )
 
     def plot_size_features_for_topologies(self, features: List[GraphFeatures]):
         name = features[0].name
@@ -121,20 +122,19 @@ class TopoFeaturesPlotter:
         plt.figure(figsize=(20, 10))
         colors = ["b", "g", "r", "c", "m", "y", "k"]
         for i, centrality_title in enumerate(
-            self.centrality_mapping.keys(), start=1
+            self.average_centrality_mapping.keys(), start=1
         ):
             plt.subplot(2, 3, i)
             for color, (topology_name, features) in zip(
                 colors, features_dict.items()
             ):
-                average_centralities = [
-                    self.calculate_average_centrality(
-                        feature_set,
-                        self.centrality_mapping[centrality_title],
-                    )
-                    for feature_set in features
-                ]
                 graph_numbers = list(range(1, len(features) + 1))
+                average_centralities = [
+                    feature.__dict__[
+                        self.average_centrality_mapping[centrality_title]
+                    ]
+                    for feature in features
+                ]
                 plt.scatter(
                     graph_numbers,
                     average_centralities,
@@ -156,20 +156,19 @@ class TopoFeaturesPlotter:
         plt.figure(figsize=(20, 10))
         colors = ["b", "g", "r", "c", "m", "y", "k"]
         for i, centrality_title in enumerate(
-            self.centrality_mapping.keys(), start=1
+            self.average_centrality_mapping.keys(), start=1
         ):
             plt.subplot(2, 3, i)
             for color, (topology_name, features) in zip(
                 colors, features_dict.items()
             ):
-                average_centralities = [
-                    self.calculate_average_centrality(
-                        feature_set,
-                        self.centrality_mapping[centrality_title],
-                    )
-                    for feature_set in features
-                ]
                 diameters = [feature.diameter for feature in features]
+                average_centralities = [
+                    feature.__dict__[
+                        self.average_centrality_mapping[centrality_title]
+                    ]
+                    for feature in features
+                ]
                 plt.scatter(
                     diameters,
                     average_centralities,

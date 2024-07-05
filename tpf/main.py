@@ -2,7 +2,11 @@ import pickle
 from typing import List
 from agent_top import AgentGraphGenerator as Ag
 from evaluation import AgentFeatures as Af
-from fig_plot import GraphPlotter, GraphFeaturesPlotter, TopoFeaturesPlotter
+from fig_plot import (
+    GraphPlotter,
+    GraphFeaturesPlotter,
+    TopoFeaturesPlotter,
+)
 import os
 
 
@@ -46,7 +50,8 @@ for topo in topologies:
     # calculate features and save
     topo_features = Af.calculate_features(topo_data)
     save_file(
-        topo_features, f"{storge_paths['topo_fea_path']}{topo}_features.pkl"
+        topo_features,
+        f"{storge_paths['topo_fea_path']}{topo}_features.pkl",
     )
 
     # plot graphs and save
@@ -69,5 +74,5 @@ for topo in topologies:
     features = load_file(f"{storge_paths['topo_fea_path']}{topo}_features.pkl")
     features_dict[topo] = features
 Tfp = TopoFeaturesPlotter(storge_paths["topo_fea_plot_path"])
-Tfp.plot_centrality_features_for_topologies(features_dict)
 Tfp.plot_size_and_centrality_for_topologies(features_dict)
+Tfp.plot_centrality_features_for_topologies(features_dict)
