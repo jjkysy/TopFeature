@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import networkx as nx
 import numpy as np
-from interface import GraphFeatures
+from tpf.interface import GraphFeatures
 
 
 class AgentFeatures:

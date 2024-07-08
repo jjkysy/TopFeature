@@ -1,12 +1,13 @@
 import pickle
-from typing import List
-from agent_top import AgentGraphGenerator as Ag
-from evaluation import AgentFeatures as Af
-from fig_plot import (
+from typing import Callable, List, Dict
+from tpf.agent_top import AgentGraphGenerator as Ag
+from tpf.evaluation import AgentFeatures as Af
+from tpf.fig_plot import (
     GraphPlotter,
     GraphFeaturesPlotter,
     TopoFeaturesPlotter,
 )
+from tpf.interface import GraphData
 import os
 
 
@@ -25,7 +26,7 @@ n_topologies = 100
 n_nodes_in_topologies = 100
 topologies = ["hierarchicals", "meshes", "chains", "pools", "stars"]
 
-generator_functions = {
+generator_functions: Dict[str, Callable[[int, int], List[GraphData]]] = {
     "hierarchicals": Ag.generate_hierarchicals,
     "meshes": Ag.generate_meshes,
     "chains": Ag.generate_chains,

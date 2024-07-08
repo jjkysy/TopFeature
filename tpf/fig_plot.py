@@ -10,7 +10,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-from interface import GraphData, GraphFeatures
+from tpf.interface import GraphData, GraphFeatures
 
 
 class PlotStorage:
@@ -110,7 +110,7 @@ class TopoFeaturesPlotter:
         diameter = []
         for feature in features[0:100]:
             diameter.append(feature.diameter)
-        plt.scatter(range(100), diameter)
+        plt.scatter(range(len(diameter)), diameter)
         plt.title(f"Diameter of {name}")
         plt.xlabel("Graph")
         plt.ylabel("Diameter")

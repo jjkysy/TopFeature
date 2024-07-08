@@ -28,13 +28,13 @@ install:          ## Install the project in dev mode.
 fmt:              ## Format code using black & isort.
 	poetry run isort tpf/
 	poetry run black -l 79 tpf/
-#	poetry run black -l 79 tests/
+	poetry run black -l 79 tests/
 
 .PHONY: lint
 lint:             ## Run pep8, black, mypy linters.
 	poetry run flake8 tpf/
 	poetry run black -l 79 --check tpf/
-#	poetry run black -l 79 --check tests/
+	poetry run black -l 79 --check tests/
 	poetry run mypy --explicit-package-bases --ignore-missing-imports tpf/
 
 

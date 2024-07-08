@@ -10,7 +10,7 @@ from typing import List, Callable, Dict
 import random
 
 import networkx as nx
-from interface import GraphData
+from tpf.interface import GraphData
 
 
 class AgentGraphGenerator:
