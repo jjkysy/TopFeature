@@ -46,6 +46,10 @@ class AgentFeatures:
     @classmethod
     def calculate_features(cls, graph_data_list: List) -> List:
         features = []
+
+        def calculate_average_centrality(centrality_dict):
+            return sum(centrality_dict.values()) / len(centrality_dict)
+
         for graph_data in graph_data_list:
             G = graph_data.graph
             degree_centrality = nx.degree_centrality(G)  # Degree centrality
@@ -69,6 +73,15 @@ class AgentFeatures:
             )  # second order centrality
             clustering_coefficient = nx.clustering(G)
 
+            average_dc = calculate_average_centrality(degree_centrality)
+            average_bc = calculate_average_centrality(betweenness_centrality)
+            average_cc = calculate_average_centrality(closeness_centrality)
+            average_soc = calculate_average_centrality(second_order_centrality)
+            average_ni = calculate_average_centrality(node_independence)
+            average_clu_co = calculate_average_centrality(
+                clustering_coefficient
+            )
+
             features.append(
                 GraphFeatures(
                     name=graph_data.name,
@@ -82,6 +95,12 @@ class AgentFeatures:
                     node_independence=node_independence,
                     second_order_centrality=second_order_centrality,
                     clustering_coefficient=clustering_coefficient,
+                    average_betweenness_centrality=average_bc,
+                    average_closeness_centrality=average_cc,
+                    average_degree_centrality=average_dc,
+                    average_node_independence=average_ni,
+                    average_second_order_centrality=average_soc,
+                    average_clustering_coefficient=average_clu_co,
                 )
             )
         return features
@@ -98,7 +117,13 @@ def save_features(features, filename):
 
 
 if __name__ == "__main__":
-    graph_types = ["hierarchicals", "meshes", "stars", "pools", "chains"]
+    graph_types = [
+        "hierarchicals",
+        "meshes",
+        "stars",
+        "pools",
+        "chains",
+    ]
     try:
         for graph_type in graph_types:
             graphs = load_graphs(f"topo/{graph_type}_test.pkl")

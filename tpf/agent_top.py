@@ -43,13 +43,13 @@ class AgentGraphGenerator:
     @classmethod
     def generate_pools(cls, n_node: int, n_graph: int) -> List[GraphData]:
         # shared-pool is a star with a fully-connected sub grpah as center
-        # we set the number of centers as 5% of the total nodes
+        # we set the number of centers as 5%-30% of the total nodes
         pool_graph = []
+        pool_nodes_num = random.choice(range(5, 30))
         for i in range(n_graph):
-            n_center = int(n_node * 0.05)
-            pool = nx.complete_graph(n_center, nx.DiGraph())
-            for j in range(n_center, n_node):
-                center_node = random.choice(range(n_center))
+            pool = nx.complete_graph(pool_nodes_num, nx.DiGraph())
+            for j in range(pool_nodes_num, n_node):
+                center_node = random.choice(range(pool_nodes_num))
                 pool.add_edge(j, center_node)
                 pool.add_edge(center_node, j)
             if nx.is_strongly_connected(pool):
