@@ -1,45 +1,37 @@
-import pickle
-from typing import List
-from agent_top import AgentGraphGenerator as Ag
-from evaluation import AgentFeatures as Af
-from fig_plot import (
+from .Generator.graph_generator import GraphGen
+from.Feature_analyzer.features_analyses import FeatureAnalyse
+from tpf.Plotter.fig_plot import (
     GraphPlotter,
     GraphFeaturesPlotter,
     TopoFeaturesPlotter,
 )
-import os
-
-
-def save_file(file: List, filename):
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, "wb") as f:
-        return pickle.dump(file, f)
-
-
-def load_file(filename):
-    with open(filename, "rb") as f:
-        return pickle.load(f)
-
 
 n_topologies = 100
 n_nodes_in_topologies = 100
-topologies = ["hierarchicals", "meshes", "chains", "pools", "stars"]
+mas_topologies = ["hierarchical", "mesh", "chain", "pool", "star"]
+task_topologies = ["linear", "parallel", "hierarchical"]
 
-generator_functions = {
-    "hierarchicals": Ag.generate_hierarchicals,
-    "meshes": Ag.generate_meshes,
-    "chains": Ag.generate_chains,
-    "pools": Ag.generate_pools,
-    "stars": Ag.generate_stars,
-}
-
-storge_paths = {
+storage_paths = {
     "topo_path": "stats/topo/",
-    "topo_fea_path": "stats/topo_features/",
+    "topo_fea_path": "stats/features/",
     "topo_plot_path": "plots/topo_plots/",
-    "graph_fea_plot_path": "plots/graph_features_plots/",
-    "topo_fea_plot_path": "plots/topo_features_plots/",
+    "topo_fea_plot_path": "plots/topo_features_plots/"
 }
+
+# step 1 generate graphs / or extract graphs (to be added)
+mas_gen = GraphGen(storage_paths["topo_path"], 'mas')
+task_gen = GraphGen(storage_paths["topo_path"], 'task')
+df_mas_graph = mas_gen.gen_and_save_graph(mas_topologies, n_nodes_in_topologies, n_topologies)
+df_task_graph = task_gen.gen_and_save_graph(task_topologies, n_nodes_in_topologies, n_topologies)
+# step 2 analysing graph features
+
+mas_feat_analyse = FeatureAnalyse(df_mas_graph, storage_paths["topo_fea_path"])
+task_feat_analyse = FeatureAnalyse(df_task_graph, storage_paths["topo_fea_path"])
+df_mas_features = FeatureAnalyse.mas_feature
+
+# step 3 calculating matching result and optimizing
+
+# step 4 plotting
 
 
 # generate topologies and save
@@ -76,3 +68,10 @@ for topo in topologies:
 Tfp = TopoFeaturesPlotter(storge_paths["topo_fea_plot_path"])
 Tfp.plot_size_and_centrality_for_topologies(features_dict)
 Tfp.plot_centrality_features_for_topologies(features_dict)
+
+
+extractor()
+graph_generator()
+graph_analyse()
+graph_optimizer()
+graph_plotter()
