@@ -36,10 +36,11 @@ class GraphFeatures:
 
 
 @dataclass
-class TaskFeatures:
+class TaskGraphFeatures:
     id: UUID
     subtask_dependency_index: float = 0
     information_entropy: float = 0
+    mutual_information: float = 0
 
 
 @dataclass
@@ -54,7 +55,7 @@ class MasEval:
     task_graph: GraphData
     mas_graph: GraphData
     mas_feature: Optional[GraphFeatures] = None
-    task_feature: Optional[TaskFeatures] = None
+    task_feature: Optional[TaskGraphFeatures] = None
     task_eval: Optional[GraphEval] = None
     mas_eval: Optional[GraphEval] = None
     TCT: float = 0

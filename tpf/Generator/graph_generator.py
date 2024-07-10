@@ -1,16 +1,18 @@
-from agent_top import AgentGraphGenerator as Ag
-from task_top import TaskGraphGenerator as Tg
-from tpf.utils import save_file
+from .agent_top import AgentGraphGenerator as Ag
+from .task_top import TaskGraphGenerator as Tg
+from utils import save_file
 from typing import Dict, List
 import pandas as pd
 
 
 class GraphGen:
     def __init__(self, storage_path: str, g_type: str):
-        self.generator_functions = {"task": {
-            "linear": Tg.generate_linear_tasks,
-            "parallel": Tg.generate_parallel_tasks,
-            "hybrid": Tg.generate_hybrid_tasks
+        self.generator_functions = {
+            "task": {
+                "linear": Tg.generate_linear_tasks,
+                "parallel": Tg.generate_parallel_tasks,
+                "simple_hybrid": Tg.generate_hybrid_tasks,
+                "layer_hybrid": Tg.generate_layer_hybrid_tasks
         },
             "mas": {
                 "hierarchical": Ag.generate_hierarchical,

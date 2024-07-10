@@ -10,7 +10,7 @@ from typing import List, Callable, Dict
 import random
 
 import networkx as nx
-from tpf.interface import GraphData
+from interface import GraphData
 import uuid
 
 

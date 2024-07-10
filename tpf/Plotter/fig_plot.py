@@ -10,7 +10,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-from tpf.interface import GraphData, GraphFeatures
+from interface import GraphData, GraphFeatures
 
 
 class PlotStorage:

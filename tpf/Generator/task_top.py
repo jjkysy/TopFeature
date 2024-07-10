@@ -14,7 +14,7 @@ import random
 import networkx as nx
 from typing import List, Callable, Dict
 import random
-from tpf.interface import GraphData
+from interface import GraphData
 import uuid
 
 
@@ -59,24 +59,26 @@ class TaskGraphGenerator:
             )
         return hybrid_graph
 
-    # TODO: improve the algorithm to generate a hybrid task
-    ############################################################
-    # another way to generate a hybrid task
-    # in this algo, we start from node 0 and edge 0-1
-    # and there are 2 choices every step
-    # we set 2 pointers, one for the current node, one for the latest node
-    # 1. add an edge from current node to the latest node
-    # e.g. current status: node set:(0,1) edge set (0->1),
-    #       current node=0, latest node=1,
-    #       then we add an new edge 0->2, and update the latest node to 2
-    # 2. move current point to the next node
-    # e.g. current status: node set:(0,1,2) edge set (0->1, 1->2),
-    #       current node=0, latest node=2,
-    #       then we move the current node to 1,
-    #       do not add any edge, and do not update the latest node
-    # the current node should never pass the latest node
-    # we can choose either of the 2 choices randomly, and repeat the process
-    # in this way, we can generate a hybrid task
-    ############################################################
+    @classmethod
+    def generate_layer_hybrid_tasks(
+        cls, n_node: int, n_graph: int
+    ) -> List[GraphData]:
+        layer_hybrid_graph = []
+        for i in range(n_graph):
+            layer_hybrid = nx.DiGraph()
+            layer_hybrid.add_edge(0, 1, weight = random.random())
+            current_node = 0
+            for j in range(2, n_node):
+                latest_node = j
+                choice = random.choice([0, 1])
+                if choice == 0:
+                    layer_hybrid.add_edge(current_node, latest_node, weight=random.random())
+                else:
+                    current_node += 1
+                    layer_hybrid.add_edge(current_node, latest_node, weight=random.random())
+            layer_hybrid_graph.append(
+                GraphData(graph=layer_hybrid, name=f"layer_hybrid_{i}", id=uuid.uuid4(), type='task')
+                )
+        return layer_hybrid_graph
 
 

@@ -3,8 +3,8 @@ from typing import Dict, List
 
 import networkx as nx
 import numpy as np
-from tpf.interface import GraphFeatures, GraphData
-from tpf.utils import save_file, load_file
+from interface import GraphFeatures, GraphData
+from utils import save_file, load_file
 
 
 class AgentFeatures:
