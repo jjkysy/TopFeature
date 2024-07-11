@@ -1,10 +1,7 @@
-import pickle
-from typing import Dict, List
-
 import networkx as nx
 import numpy as np
 from interface import TaskGraphFeatures, GraphData
-from utils import save_file, load_file
+
 
 class TaskFeatures:
     @classmethod
@@ -39,7 +36,7 @@ class TaskFeatures:
                         / (marginal_prob_u[i] * marginal_prob_v[j])
                     )
         return mutual_info
-    
+
     @classmethod
     def calculate_features(cls, graph_data: GraphData) -> TaskGraphFeatures:
         G = graph_data.graph
@@ -57,10 +54,9 @@ class TaskFeatures:
         )
 
         t_features = TaskGraphFeatures(
-                id=graph_data.id,
-                subtask_dependency_index=overall_SDI,
-                information_entropy = entropy,
-                mutual_information=mutual_info,
-            )
+            id=graph_data.id,
+            subtask_dependency_index=overall_SDI,
+            information_entropy=entropy,
+            mutual_information=mutual_info,
+        )
         return t_features
-    

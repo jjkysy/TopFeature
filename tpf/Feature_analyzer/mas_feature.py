@@ -1,10 +1,8 @@
-import pickle
-from typing import Dict, List
+from typing import Dict
 
 import networkx as nx
 import numpy as np
 from interface import GraphFeatures, GraphData
-from utils import save_file, load_file
 
 
 class AgentFeatures:

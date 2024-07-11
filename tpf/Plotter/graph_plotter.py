@@ -1,30 +1,31 @@
-class GraphPlotter:
-    def __init__(self, path: str):
-        self.plot_storage = PlotStorage(path)
-        self.layout_mapping = {
-            "chain_0": nx.circular_layout,
-            "mesh_0": nx.spring_layout,
-            "pool_0": nx.spring_layout,
-            "star_0": nx.spring_layout,
-            "hierarchical_0": nx.spring_layout,
-        }
+import networkx as nx
+import matplotlib.pyplot as plt
+from interface import GraphData
+from utils import PlotStorage as PlotStorage
 
-    def plot_graph(self, graph: nx.DiGraph, name: str):
+
+class GraphPlotter:
+    layout_mapping = {
+        "chain": nx.circular_layout,
+        "mesh": nx.spring_layout,
+        "pool": nx.spring_layout,
+        "star": nx.spring_layout,
+        "hierarchical": nx.spring_layout,
+    }
+
+    @classmethod
+    def plot_graph(cls, graph_data: GraphData, storage_path: str):
         plt.figure(figsize=(10, 10))
-        layout_func = self.layout_mapping.get(name, nx.spring_layout)
-        pos = layout_func(graph)
+        layout_func = cls.layout_mapping.get(graph_data.name, nx.spring_layout)
+        pos = layout_func(graph_data.graph)
         nx.draw(
-            graph,
+            graph_data.graph,
             pos,
             with_labels=True,
             node_size=100,
             node_color="skyblue",
             font_size=8,
         )
-        plt.title(name)
-        self.plot_storage.save_plot(name)
-
-    def plot_graphs(self, graphs: List[GraphData]):
-        # only plot the first graph for now (100 in total)
-        for graph_data in graphs[:1]:
-            self.plot_graph(graph_data.graph, graph_data.name)
+        plt.title(graph_data.name)
+        plot_storage = PlotStorage(storage_path)
+        plot_storage.save_plot(graph_data.name)

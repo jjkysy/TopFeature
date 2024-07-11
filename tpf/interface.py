@@ -60,5 +60,3 @@ class MasEval:
     mas_eval: Optional[GraphEval] = None
     TCT: float = 0
     TWT: float = 0
-
-

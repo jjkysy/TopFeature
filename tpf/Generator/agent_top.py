@@ -5,8 +5,7 @@
 # Centralized: stars, hierarchicals (tree is a special case of hierarchical)
 ##############################################################################
 
-import pickle
-from typing import List, Callable, Dict
+from typing import List
 import random
 
 import networkx as nx
@@ -25,7 +24,12 @@ class AgentGraphGenerator:
             directed_mesh = nx.DiGraph(mesh)
             if nx.is_strongly_connected(directed_mesh):
                 mesh_graph.append(
-                    GraphData(graph=directed_mesh, name=f"mesh_{i}", id=uuid.uuid4(), type='mas')
+                    GraphData(
+                        graph=directed_mesh,
+                        name=f"mesh_{i}",
+                        id=uuid.uuid4(),
+                        type="mas",
+                    )
                 )
         return mesh_graph
 
@@ -37,7 +41,12 @@ class AgentGraphGenerator:
             directed_chain = nx.DiGraph(chain)
             if nx.is_strongly_connected(directed_chain):
                 chain_graph.append(
-                    GraphData(graph=directed_chain, name=f"chain_{i}", id=uuid.uuid4(), type='mas')
+                    GraphData(
+                        graph=directed_chain,
+                        name=f"chain_{i}",
+                        id=uuid.uuid4(),
+                        type="mas",
+                    )
                 )
         return chain_graph
 
@@ -54,7 +63,14 @@ class AgentGraphGenerator:
                 pool.add_edge(j, center_node)
                 pool.add_edge(center_node, j)
             if nx.is_strongly_connected(pool):
-                pool_graph.append(GraphData(graph=pool, name=f"pool_{i}", id=uuid.uuid4(), type='mas'))
+                pool_graph.append(
+                    GraphData(
+                        graph=pool,
+                        name=f"pool_{i}",
+                        id=uuid.uuid4(),
+                        type="mas",
+                    )
+                )
         return pool_graph
 
     @classmethod
@@ -65,7 +81,12 @@ class AgentGraphGenerator:
             directed_star = nx.DiGraph(star)
             if nx.is_strongly_connected(directed_star):
                 star_graph.append(
-                    GraphData(graph=directed_star, name=f"star_{i}", id=uuid.uuid4(), type='mas')
+                    GraphData(
+                        graph=directed_star,
+                        name=f"star_{i}",
+                        id=uuid.uuid4(),
+                        type="mas",
+                    )
                 )
         return star_graph
 
@@ -81,7 +102,12 @@ class AgentGraphGenerator:
                 hierarchical.add_edge(edge[1], edge[0])
             if nx.is_strongly_connected(hierarchical):
                 hierarchical_graph.append(
-                    GraphData(graph=hierarchical, name=f"hierarchical_{i}", id=uuid.uuid4(), type='mas')
+                    GraphData(
+                        graph=hierarchical,
+                        name=f"hierarchical_{i}",
+                        id=uuid.uuid4(),
+                        type="mas",
+                    )
                 )
         return hierarchical_graph
 
