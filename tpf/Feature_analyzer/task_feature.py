@@ -1,6 +1,6 @@
 import networkx as nx
 import numpy as np
-from interface import TaskGraphFeatures, GraphData
+from interface import GraphData, TaskGraphFeatures
 
 
 class TaskFeatures:

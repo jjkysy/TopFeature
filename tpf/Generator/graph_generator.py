@@ -1,7 +1,9 @@
+from typing import Callable, Dict, List
+
+import pandas as pd
+
 from .agent_top import AgentGraphGenerator as Ag
 from .task_top import TaskGraphGenerator as Tg
-import pandas as pd
-from typing import Callable, Dict, List
 
 
 class GraphGen:

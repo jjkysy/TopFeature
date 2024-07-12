@@ -1,7 +1,8 @@
+import pandas as pd
+from utils import save_file
+
 from .mas_feature import AgentFeatures as Af
 from .task_feature import TaskFeatures as Tf
-from utils import save_file
-import pandas as pd
 
 
 class FeatureAnalyse:

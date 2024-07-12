@@ -1,8 +1,9 @@
+import csv
 import os
 import pickle
-import pandas as pd
-import csv
+
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 
 
@@ -16,14 +17,15 @@ def load_file(filename):
 
 
 def pkl_2_csv(filename):
-    with open(filename, "rb") as f:
+    csv_filename = filename[:-4] + ".csv"
+    with open(csv_filename, "w", newline="") as f:
         data = pickle.load(f)
         with open(filename[:-4] + ".csv", "w") as f:
             writer = csv.writer(f)
             writer.writerow(data[0].__dict__.keys())
             for d in data:
                 writer.writerow(d.__dict__.values())
-    return filename[:-4] + ".csv"
+    return csv_filename
 
 
 class PlotStorage:

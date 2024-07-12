@@ -5,12 +5,12 @@
 # Centralized: stars, hierarchicals (tree is a special case of hierarchical)
 ##############################################################################
 
-from typing import List
 import random
+import uuid
+from typing import List
 
 import networkx as nx
 from interface import GraphData
-import uuid
 
 
 class AgentGraphGenerator:

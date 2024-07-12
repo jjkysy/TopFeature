@@ -6,12 +6,11 @@
 ##############################################################################
 
 import pandas as pd
-from .graph_plotter import GraphPlotter as Gp
-from .feature_plotter import (
-    GraphFeaturesPlotter as Gfp,
-    TaskFeaturesPlotter as Tfp,
-)
 from interface import GraphFeatures, TaskGraphFeatures
+
+from .feature_plotter import GraphFeaturesPlotter as Gfp
+from .feature_plotter import TaskFeaturesPlotter as Tfp
+from .graph_plotter import GraphPlotter as Gp
 
 
 class PlotGen:
@@ -25,9 +24,9 @@ class PlotGen:
         self.graph_list = load_graph
         self.features_list = load_features
 
-    def graph_plot(self):
+    def plot_topo(self):
         drawn_topos = set()
-        graph_path = self.storage_path + "topo_plot/"
+        graph_path = f"{self.storage_path}/topo_plot/"
         for index, row in self.graph_list.iterrows():
             graph = row["data"]
             topo = row["topology"]
@@ -35,9 +34,9 @@ class PlotGen:
                 Gp.plot_graph(graph, graph_path)
                 drawn_topos.add(topo)
 
-    def feature_plot(self):
+    def plot_feature(self):
         drawn_topos = set()
-        features_path = self.storage_path + "topo_features_plot/"
+        features_path = f"{self.storage_path}/topo_features_plot/"
         for index, row in self.features_list.iterrows():
             features = row["feature"]
             topo = row["topology"]

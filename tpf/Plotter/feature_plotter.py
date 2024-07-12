@@ -14,89 +14,83 @@ class GraphFeaturesPlotter:
     }
 
     @classmethod
-    def plot_centrality_features_for_topologies(
-        cls, features_frame: pd.DataFrame, storage_path: str
+    def _plot_features(
+        cls, features_frame, storage_path, plot_name, x_label, x_attr=None
     ):
         plt.figure(figsize=(20, 10))
         colors = ["b", "g", "r", "c", "m", "y", "k"]
+        topology_groups = list(features_frame.groupby("topology"))
+
+        if len(topology_groups) > len(colors):
+            raise ValueError(
+                "Number of topologies exceeds the number of available colors"
+            )
+
         for i, centrality_title in enumerate(
             cls.average_centrality_mapping.keys(), start=1
         ):
             plt.subplot(2, 3, i)
             for color, (topology_name, features) in zip(
-                colors, features_frame.groupby("topology")
+                colors, topology_groups
             ):
-                average_centralities = [
+                x_values = [
+                    feature.__dict__[x_attr] if x_attr else index
+                    for index, feature in enumerate(features["feature"])
+                ]
+                y_values = [
                     feature.__dict__[
                         cls.average_centrality_mapping[centrality_title]
                     ]
                     for feature in features["feature"]
                 ]
+
                 plt.scatter(
-                    range(100),
-                    average_centralities,
-                    color=color,
-                    label=topology_name,
+                    x_values, y_values, color=color, label=topology_name
                 )
 
             plt.title(centrality_title)
-            plt.xlabel("Graph")
+            plt.xlabel(x_label)
             plt.ylabel(centrality_title)
             plt.legend()
 
         plt.tight_layout()
         plot_storage = PlotStorage(storage_path)
-        plot_storage.save_plot("centrality_comparison")
+        plot_storage.save_plot(plot_name)
+
+    @classmethod
+    def plot_centrality_features_for_topologies(
+        cls, features_frame: pd.DataFrame, storage_path: str
+    ):
+        cls._plot_features(
+            features_frame, storage_path, "centrality_comparison", "Graph"
+        )
 
     @classmethod
     def plot_size_and_centrality_for_topologies(
         cls, features_frame: pd.DataFrame, storage_path: str
     ):
-        plt.figure(figsize=(20, 10))
-        colors = ["b", "g", "r", "c", "m", "y", "k"]
-        for i, centrality_title in enumerate(
-            cls.average_centrality_mapping.keys(), start=1
-        ):
-            plt.subplot(2, 3, i)
-            for color, (topology_name, features) in zip(
-                colors, features_frame.groupby("topology")
-            ):
-                diameters = [
-                    feature.diameter for feature in features["feature"]
-                ]
-                average_centralities = [
-                    feature.__dict__[
-                        cls.average_centrality_mapping[centrality_title]
-                    ]
-                    for feature in features["feature"]
-                ]
-                plt.scatter(
-                    diameters,
-                    average_centralities,
-                    color=color,
-                    label=topology_name,
-                )
-
-            plt.title(centrality_title)
-            plt.xlabel("Diameter")
-            plt.ylabel(centrality_title)
-            plt.legend()
-
-        plt.tight_layout()
-        plot_storage = PlotStorage(storage_path)
-        plot_storage.save_plot("diameter_centrality")
+        cls._plot_features(
+            features_frame,
+            storage_path,
+            "diameter_centrality",
+            "Diameter",
+            x_attr="diameter",
+        )
 
 
 class TaskFeaturesPlotter:
     @classmethod
     def plot_entropy_and_mutual_information_for_topologies(
-        self, features_frame: pd.DataFrame, storage_path: str
+        cls, features_frame: pd.DataFrame, storage_path: str
     ):
         plt.figure(figsize=(10, 10))
         colors = ["b", "g", "r", "c", "m", "y", "k"]
-        for i, (topology_name, features) in enumerate(
-            features_frame.groupby("topology")
-        ):
+        topology_groups = list(features_frame.groupby("topology"))
+        if len(topology_groups) > len(colors):
+            raise ValueError(
+                "Number of topologies exceeds the number of available colors"
+            )
+        for i, (topology_name, features) in enumerate(topology_groups):
             entropies = [
                 feature.information_entropy for feature in features["feature"]
             ]

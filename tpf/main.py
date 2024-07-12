@@ -1,5 +1,5 @@
-from Generator.graph_generator import GraphGen
 from Feature_analyzer.features_analyses import FeatureAnalyse
+from Generator.graph_generator import GraphGen
 from Plotter.fig_plotter import PlotGen
 
 n_topologies = 100
@@ -37,10 +37,10 @@ df_task_features = task_feat_analyse.task_feature()
 mas_plottor = PlotGen(
     df_mas_graph, df_mas_features, storage_paths["topo_plot_path"]
 )
-mas_plottor.graph_plot()
-mas_plottor.feature_plot()
+mas_plottor.plot_topo()
+mas_plottor.plot_feature()
 task_plottor = PlotGen(
     df_task_graph, df_task_features, storage_paths["topo_plot_path"]
 )
-task_plottor.graph_plot()
-task_plottor.feature_plot()
+task_plottor.plot_topo()
+task_plottor.plot_feature()

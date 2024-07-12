@@ -1,16 +1,17 @@
-import networkx as nx
 import matplotlib.pyplot as plt
+import networkx as nx
 from interface import GraphData
 from utils import PlotStorage as PlotStorage
 
 
 class GraphPlotter:
     layout_mapping = {
-        "chain": nx.circular_layout,
-        "mesh": nx.spring_layout,
-        "pool": nx.spring_layout,
-        "star": nx.spring_layout,
-        "hierarchical": nx.spring_layout,
+        "chain_0": nx.circular_layout,
+        "linear_0": nx.circular_layout,
+        "mesh_0": nx.spring_layout,
+        "pool_0": nx.spring_layout,
+        "star_0": nx.spring_layout,
+        "hierarchical_0": nx.spring_layout,
     }
 
     @classmethod

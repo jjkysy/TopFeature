@@ -7,11 +7,12 @@
 # Further we calculate their dependencies and so on(if any)
 # to be filled @yang
 ##############################################################################
-from typing import List
 import random
+import uuid
+from typing import List
+
 import networkx as nx
 from interface import GraphData
-import uuid
 
 
 class TaskGraphGenerator:

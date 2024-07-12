@@ -2,7 +2,7 @@ from typing import Dict
 
 import networkx as nx
 import numpy as np
-from interface import GraphFeatures, GraphData
+from interface import GraphData, GraphFeatures
 
 
 class AgentFeatures:
