@@ -1,4 +1,4 @@
-from Feature_analyzer.features_analyses import FeatureAnalyse
+from Feature_analyzer.features_analyses import FeatureAnalyse, FeatureEval
 from Generator.graph_generator import GraphGen
 from Plotter.fig_plotter import PlotGen
 
@@ -31,16 +31,29 @@ task_feat_analyse = FeatureAnalyse(
 df_mas_features = mas_feat_analyse.mas_feature()
 df_task_features = task_feat_analyse.task_feature()
 
-# step 3 calculating matching result and optimizing
+# step 3 calculating matching result
+mas_feat_eval = FeatureEval(df_mas_features, storage_paths["topo_fea_path"])
+df_mas_eval = mas_feat_eval.mas_eval()
+task_feat_eval = FeatureEval(df_task_features, storage_paths["topo_fea_path"])
+df_task_eval = task_feat_eval.task_eval()
 
-# step 4 plotting
+
+# step 4 matching and optimizing
+
+
+# along with step 1-4, do plotting and visualization
 mas_plottor = PlotGen(
     df_mas_graph, df_mas_features, storage_paths["topo_plot_path"]
 )
-mas_plottor.plot_topo()
-mas_plottor.plot_feature()
 task_plottor = PlotGen(
     df_task_graph, df_task_features, storage_paths["topo_plot_path"]
 )
+# 1. plotting the graph
+mas_plottor.plot_topo()
 task_plottor.plot_topo()
+# 2. plotting the graph features
+mas_plottor.plot_feature()
 task_plottor.plot_feature()
+# 3. plotting the evaluation results
+# mas_plottor.plot_eval()
+# task_plottor.plot_eval()

@@ -12,13 +12,18 @@ def save_file(file: pd.DataFrame, filename):
     file.to_pickle(filename)
 
 
+def save_as_csv(file: pd.DataFrame, filename):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    file.to_csv(filename, index=False)
+
+
 def load_file(filename):
     return pd.read_pickle(filename)
 
 
 def pkl_2_csv(filename):
     csv_filename = filename[:-4] + ".csv"
-    with open(csv_filename, "w", newline="") as f:
+    with open(csv_filename, "rb", newline="") as f:
         data = pickle.load(f)
         with open(filename[:-4] + ".csv", "w") as f:
             writer = csv.writer(f)

@@ -28,12 +28,13 @@ class TaskFeatures:
         marginal_prob_u = joint_prob.sum(axis=0)
         marginal_prob_v = joint_prob.sum(axis=1)
         mutual_info = 0
+        epsilon = 1e-10
         for i in range(max_degree + 1):
             for j in range(max_degree + 1):
                 if joint_prob[i, j] > 0:
                     mutual_info += joint_prob[i, j] * np.log(
                         joint_prob[i, j]
-                        / (marginal_prob_u[i] * marginal_prob_v[j])
+                        / (marginal_prob_u[i] * marginal_prob_v[j] + epsilon)
                     )
         return mutual_info
 
