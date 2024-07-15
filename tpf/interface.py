@@ -46,6 +46,7 @@ class TaskGraphFeatures:
 @dataclass
 class GraphEval:
     id: UUID
+    diameter: int = 0
     dependency: float = 0
     uncertainty: float = 0
 

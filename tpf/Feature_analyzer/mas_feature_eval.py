@@ -7,7 +7,6 @@
 
 import numpy as np
 from interface import GraphEval, GraphFeatures
-from sklearn.preprocessing import MinMaxScaler
 
 
 class MASFeatureEvaluator:
@@ -37,11 +36,9 @@ class MASFeatureEvaluator:
                 graph_feature.average_second_order_centrality,
                 graph_feature.average_clustering_coefficient,
             ]
-        ).reshape(1, -1)
-
-        scaler = MinMaxScaler()
-        normalized_features = scaler.fit_transform(feature_values)
-        uncertainty = np.std(normalized_features)
+        )
+        cvs = np.std(feature_values, ddof=1) / np.mean(feature_values)
+        uncertainty = np.mean(cvs)
         return uncertainty
 
     @classmethod
@@ -51,8 +48,10 @@ class MASFeatureEvaluator:
         """
         dependency = cls.evaluate_dependency(graph_feature)
         uncertainty = cls.evaluate_uncertainty(graph_feature)
+        diameter = graph_feature.diameter
         g_evaluation = GraphEval(
             id=graph_feature.id,
+            diameter=diameter,
             dependency=dependency,
             uncertainty=uncertainty,
         )
