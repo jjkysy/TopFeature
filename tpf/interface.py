@@ -39,7 +39,8 @@ class GraphFeatures:
 class TaskGraphFeatures:
     id: UUID
     subtask_dependency_index: float = 0
-    information_entropy: float = 0
+    node_degree_entropy: float = 0
+    path_length_entropy: float = 0
     mutual_information: float = 0
 
 

@@ -95,7 +95,7 @@ class TaskFeaturesPlotter:
                 feature.mutual_information for feature in features["feature"]
             ]
             entropies = [
-                feature.information_entropy for feature in features["feature"]
+                feature.node_degree_entropy for feature in features["feature"]
             ]
             plt.scatter(
                 mutual_informations,

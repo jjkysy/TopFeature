@@ -32,7 +32,8 @@ class TaskFeatureEvaluator:
         Evaluate the uncertainty of the graph
         """
         # TODO: consider entropy for now, may need more features
-        uncertainty = task_feature.information_entropy
+        # uncertainty = task_feature.node_degree_entropy
+        uncertainty = task_feature.path_length_entropy
         return uncertainty
 
     @classmethod
