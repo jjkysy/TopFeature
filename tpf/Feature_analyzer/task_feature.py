@@ -1,7 +1,8 @@
+from typing import Dict
+
 import networkx as nx
 import numpy as np
 from interface import GraphData, TaskGraphFeatures
-from typing import Dict
 
 
 class TaskFeatures:
