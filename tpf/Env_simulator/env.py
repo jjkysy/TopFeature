@@ -1,79 +1,69 @@
-import math
-import random
-
-from shapely.geometry import LineString, Point, Polygon
+import numpy as np
+from shapely.affinity import scale
+from shapely.geometry import Point, Polygon
 
 
 class Env:
     def __init__(self, width, height, radius, velocity):
-        self.width = width
-        self.height = height
         self.radius = radius
         self.velocity = velocity
-        self.polygon_points = self.generate_convex_polygon(8, width, height)
-        self.boundary = Polygon(self.polygon_points)
+        self.width = width
+        self.height = height
+        self.boundary = self.create_square_boundary(radius)
         self.hole_x, self.hole_y = (
-            self.generate_random_position_within_polygon()
+            self.generate_random_position_within_boundary()
         )
-        self.ball_speed_x = self.velocity
-        self.ball_speed_y = self.velocity
+        self.direction = np.random.uniform(0, 2 * np.pi)
 
-    def generate_convex_polygon(self, num_points, width, height):
-        points = [
-            (random.randint(0, width), random.randint(0, height))
-            for _ in range(num_points)
-        ]
-        centroid = (
-            sum([p[0] for p in points]) / num_points,
-            sum([p[1] for p in points]) / num_points,
+    def create_square_boundary(self, radius):
+        side_length = (
+            10 * radius
+        )  # Initial side length based on the diameter of the hole
+        square = Polygon(
+            [
+                (-side_length / 2, -side_length / 2),
+                (side_length / 2, -side_length / 2),
+                (side_length / 2, side_length / 2),
+                (-side_length / 2, side_length / 2),
+            ]
         )
-        points.sort(
-            key=lambda p: math.atan2(p[1] - centroid[1], p[0] - centroid[0])
-        )
-        return points
+        return square
 
-    def is_point_inside_polygon(self, x, y):
-        point = Point(x, y)
-        return self.boundary.contains(point)
-
-    def generate_random_position_within_polygon(self):
+    def generate_random_position_within_boundary(self):
         min_x, min_y, max_x, max_y = self.boundary.bounds
         while True:
-            x = random.uniform(min_x, max_x)
-            y = random.uniform(min_y, max_y)
-            if self.is_point_inside_polygon(x, y):
+            x = np.random.uniform(min_x, max_x)
+            y = np.random.uniform(min_y, max_y)
+            point = Point(x, y)
+            if self.boundary.contains(point):
                 return x, y
 
     def move_hole(self, dt):
-        self.hole_x += self.ball_speed_x * dt
-        self.hole_y += self.ball_speed_y * dt
+        new_x = self.hole_x + self.velocity * np.cos(self.direction) * dt
+        new_y = self.hole_y + self.velocity * np.sin(self.direction) * dt
+        new_position = Point(new_x, new_y)
 
-        for i in range(len(self.polygon_points)):
-            p1 = self.polygon_points[i]
-            p2 = self.polygon_points[(i + 1) % len(self.polygon_points)]
-            edge = LineString([p1, p2])
-            ball_point = Point(self.hole_x, self.hole_y)
-
-            if edge.distance(ball_point) <= self.radius:
-                edge_vector = (p2[0] - p1[0], p2[1] - p1[1])
-                edge_length = math.hypot(edge_vector[0], edge_vector[1])
-                normal_vector = (
-                    -edge_vector[1] / edge_length,
-                    edge_vector[0] / edge_length,
+        if not self.boundary.contains(new_position):
+            self.direction = np.pi - self.direction
+            new_x = self.hole_x + self.velocity * np.cos(self.direction) * dt
+            new_y = self.hole_y + self.velocity * np.sin(self.direction) * dt
+            new_position = Point(new_x, new_y)
+            if not self.boundary.contains(new_position):
+                self.direction = -self.direction
+                new_x = (
+                    self.hole_x + self.velocity * np.cos(self.direction) * dt
                 )
-
-                velocity_vector = (self.ball_speed_x, self.ball_speed_y)
-                dot_product = (
-                    velocity_vector[0] * normal_vector[0]
-                    + velocity_vector[1] * normal_vector[1]
+                new_y = (
+                    self.hole_y + self.velocity * np.sin(self.direction) * dt
                 )
-                self.ball_speed_x -= 2 * dot_product * normal_vector[0]
-                self.ball_speed_y -= 2 * dot_product * normal_vector[1]
+                new_position = Point(new_x, new_y)
 
-                self.hole_x += self.ball_speed_x * dt
-                self.hole_y += self.ball_speed_y * dt
+        self.hole_x, self.hole_y = new_x, new_y
 
-                break
+    def expand_boundary(self, factor):
+        self.boundary = scale(
+            self.boundary, xfact=factor, yfact=factor, origin=(0, 0)
+        )
 
     def get_boundary(self):
         return self.boundary
