@@ -1,7 +1,10 @@
 import concurrent.futures
+import logging
 
 from Env_simulator.game import run_simulation
 from Plotter.simulation_plotter import plot_hits, plot_max_hits
+
+logging.basicConfig(level=logging.INFO)
 
 
 def run_simulation_for_agents(
@@ -71,9 +74,9 @@ def main():
         save_path=storage_paths["simulation_path"] + "max_hits.png",
     )
 
-    print(f"Agent counts: {agent_counts}")
-    print(f"Max hits list (Normal Agents): {max_hits_normal_list}")
-    print(f"Max hits list (Special Agents): {max_hits_special_list}")
+    logging.info(f"Agent counts: {agent_counts}")
+    logging.info(f"Max hits list (Normal Agents): {max_hits_normal_list}")
+    logging.info(f"Max hits list (Special Agents): {max_hits_special_list}")
 
 
 if __name__ == "__main__":
