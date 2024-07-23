@@ -1,7 +1,7 @@
 import logging
 
-from Env_simulator.game_visual import run_simulation
 from Plotter.simulation_plotter import plot_hits, plot_max_hits
+from Simulator.game_visual import run_simulation
 
 logging.basicConfig(level=logging.INFO)
 
@@ -12,11 +12,10 @@ def main():
     radius = 20
     velocity = 5
     num_agents_list = [15, 30, 150, 300, 900]
-    num_steps = 100
+    num_steps = 300
     dt = 1
     storage_paths = {
         "simulation_path": "plots/simulation_plots/",
-        # add ...
         "animation_save_path": "plots/animation/",
     }
     agent_counts = []

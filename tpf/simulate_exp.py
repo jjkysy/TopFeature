@@ -1,8 +1,8 @@
 import concurrent.futures
 import logging
 
-from Env_simulator.game import run_simulation
 from Plotter.simulation_plotter import plot_hits, plot_max_hits
+from Simulator.game import run_simulation
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,7 +25,6 @@ def main():
     dt = 1
     storage_paths = {
         "simulation_path": "plots/simulation_plots/",
-        # add ...
     }
     agent_counts = []
     max_hits_normal_list = []

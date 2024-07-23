@@ -44,21 +44,33 @@ class Env:
         new_position = Point(new_x, new_y)
 
         if not self.boundary.contains(new_position):
-            self.direction = np.pi - self.direction
+            normal_vector = self.calculate_normal_vector(new_position)
+            self.direction = self.reflect_direction(
+                self.direction, normal_vector
+            )
             new_x = self.hole_x + self.velocity * np.cos(self.direction) * dt
             new_y = self.hole_y + self.velocity * np.sin(self.direction) * dt
             new_position = Point(new_x, new_y)
-            if not self.boundary.contains(new_position):
-                self.direction = -self.direction
-                new_x = (
-                    self.hole_x + self.velocity * np.cos(self.direction) * dt
-                )
-                new_y = (
-                    self.hole_y + self.velocity * np.sin(self.direction) * dt
-                )
-                new_position = Point(new_x, new_y)
 
         self.hole_x, self.hole_y = new_x, new_y
+
+    def calculate_normal_vector(self, point):
+        min_x, min_y, max_x, max_y = self.boundary.bounds
+        if point.x <= min_x or point.x >= max_x:
+            return np.array([1, 0])  # Horizontal wall
+        if point.y <= min_y or point.y >= max_y:
+            return np.array([0, 1])  # Vertical wall
+        return np.array(
+            [0, 0]
+        )  # Should not reach here if correctly calculated
+
+    def reflect_direction(self, direction, normal_vector):
+        direction_vector = np.array([np.cos(direction), np.sin(direction)])
+        reflection_vector = (
+            direction_vector
+            - 2 * np.dot(direction_vector, normal_vector) * normal_vector
+        )
+        return np.arctan2(reflection_vector[1], reflection_vector[0])
 
     def expand_boundary(self, factor):
         self.boundary = scale(

@@ -1,77 +1,121 @@
 import numpy as np
+from interface import AgentData
 from shapely.geometry import Point, Polygon
 
 
 class Agent:
-    def __init__(self, boundary: Polygon):
-        self.boundary = boundary
-        self.position = self._generate_random_position_within_polygon()
-        self.direction = np.random.uniform(0, 2 * np.pi)
-        self.speed = np.random.uniform(1, 5)
+    @classmethod
+    def _create(cls, agent_id: int, boundary: Polygon) -> AgentData:
+        position = cls._generate_random_position_within_polygon(boundary)
+        direction = np.random.uniform(0, 2 * np.pi)
+        speed = np.random.uniform(1, 5)
+        return AgentData(agent_id, position, direction, speed, boundary)
 
-    def _generate_random_position_within_polygon(self):
-        min_x, min_y, max_x, max_y = self.boundary.bounds
+    @staticmethod
+    def _generate_random_position_within_polygon(boundary: Polygon) -> Point:
+        min_x, min_y, max_x, max_y = boundary.bounds
         while True:
             x = np.random.uniform(min_x, max_x)
             y = np.random.uniform(min_y, max_y)
             point = Point(x, y)
-            if self.boundary.contains(point):
+            if boundary.contains(point):
                 return point
 
-    def move(self, dt):
-        new_x = self.position.x + self.speed * np.cos(self.direction) * dt
-        new_y = self.position.y + self.speed * np.sin(self.direction) * dt
+    @staticmethod
+    def move(agent: AgentData, dt: float) -> None:
+        new_x = agent.position.x + agent.speed * np.cos(agent.direction) * dt
+        new_y = agent.position.y + agent.speed * np.sin(agent.direction) * dt
         new_position = Point(new_x, new_y)
 
-        if not self.boundary.contains(new_position):
-            self.direction = (self.direction + np.pi) % (2 * np.pi)
-            new_x = self.position.x + self.speed * np.cos(self.direction) * dt
-            new_y = self.position.y + self.speed * np.sin(self.direction) * dt
+        if not agent.boundary.contains(new_position):
+            normal_vector = Agent.calculate_normal_vector(
+                new_position, agent.boundary
+            )
+            agent.direction = Agent.reflect_direction(
+                agent.direction, normal_vector
+            )
+
+            new_x = (
+                agent.position.x + agent.speed * np.cos(agent.direction) * dt
+            )
+            new_y = (
+                agent.position.y + agent.speed * np.sin(agent.direction) * dt
+            )
             new_position = Point(new_x, new_y)
 
-            if not self.boundary.contains(new_position):
-                self.direction = (self.direction + np.pi) % (2 * np.pi)
-                new_x = (
-                    self.position.x + self.speed * np.cos(self.direction) * dt
-                )
-                new_y = (
-                    self.position.x + self.speed * np.sin(self.direction) * dt
-                )
-                new_position = Point(new_x, new_y)
+        agent.position = new_position
 
-        self.position = new_position
+    @staticmethod
+    def calculate_normal_vector(point: Point, boundary: Polygon) -> np.ndarray:
+        min_x, min_y, max_x, max_y = boundary.bounds
+        if point.x <= min_x or point.x >= max_x:
+            return np.array([1, 0])  # Horizontal wall
+        if point.y <= min_y or point.y >= max_y:
+            return np.array([0, 1])  # Vertical wall
+        return np.array(
+            [0, 0]
+        )  # Should not reach here if correctly calculated
 
-    def update_boundary(self, new_boundary):
-        self.boundary = new_boundary
-        if not self.boundary.contains(self.position):
-            self.position = self._generate_random_position_within_polygon()
+    @staticmethod
+    def reflect_direction(
+        direction: float, normal_vector: np.ndarray
+    ) -> float:
+        direction_vector = np.array([np.cos(direction), np.sin(direction)])
+        reflection_vector = (
+            direction_vector
+            - 2 * np.dot(direction_vector, normal_vector) * normal_vector
+        )
+        return np.arctan2(reflection_vector[1], reflection_vector[0])
 
-    def throw_needle(self):
-        return self.position
+    @staticmethod
+    def update_boundary(agent: AgentData, new_boundary: Polygon) -> None:
+        agent.boundary = new_boundary
+        if not new_boundary.contains(agent.position):
+            agent.position = Agent._generate_random_position_within_polygon(
+                new_boundary
+            )
 
 
 class Agent_with_initial_position(Agent):
-    def __init__(self, boundary: Polygon, initial_position: Point):
-        super().__init__(boundary)
-        self.position = initial_position
-
-    def move(self, dt):
-        super().move(dt)
+    @classmethod
+    def create(
+        cls, agent_id: int, boundary: Polygon, initial_position: Point
+    ) -> "AgentData":
+        agent_data = super()._create(agent_id, boundary)
+        return AgentData(
+            agent_id,
+            initial_position,
+            agent_data.direction,
+            agent_data.speed,
+            boundary,
+        )
 
 
 class Agent_with_initial_speed(Agent):
-    def __init__(self, boundary: Polygon, initial_speed: float):
-        super().__init__(boundary)
-        self.speed = initial_speed
-
-    def move(self, dt):
-        super().move(dt)
+    @classmethod
+    def create(
+        cls, agent_id: int, boundary: Polygon, initial_speed: float
+    ) -> "AgentData":
+        agent_data = super()._create(agent_id, boundary)
+        return AgentData(
+            agent_id,
+            agent_data.position,
+            agent_data.direction,
+            initial_speed,
+            boundary,
+        )
 
 
 class Agent_with_initial_direction(Agent):
-    def __init__(self, boundary: Polygon, initial_direction: float):
-        super().__init__(boundary)
-        self.direction = initial_direction
-
-    def move(self, dt):
-        super().move(dt)
+    @classmethod
+    def create(
+        cls, agent_id: int, boundary: Polygon, initial_direction: float
+    ) -> "AgentData":
+        agent_data = super()._create(agent_id, boundary)
+        return AgentData(
+            agent_id,
+            agent_data.position,
+            initial_direction,
+            agent_data.speed,
+            boundary,
+        )

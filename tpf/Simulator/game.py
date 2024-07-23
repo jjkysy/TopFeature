@@ -1,5 +1,3 @@
-import imageio
-import pygame
 from Agent_simulator.agent import (
     Agent,
     Agent_with_initial_direction,
@@ -8,49 +6,16 @@ from Agent_simulator.agent import (
 )
 from Env_simulator.env import Env
 from shapely.geometry import Point
+from utils import calculate_hits
 
 
-def calculate_hits(needles, target_hole):
-    return [needle for needle in needles if target_hole.contains(needle)]
-
-
-def draw_polygon(screen, boundary, color):
-    pygame.draw.polygon(
-        screen,
-        color,
-        [(int(x + 400), int(y + 300)) for x, y in boundary.exterior.coords],
-        1,
-    )
-
-
-def draw_hole(screen, env, color):
-    pygame.draw.circle(
-        screen,
-        color,
-        (int(env.hole_x + 400), int(env.hole_y + 300)),
-        env.radius,
-    )
-
-
-def draw_agents(screen, agents, color):
-    for agent in agents:
-        pygame.draw.circle(
-            screen,
-            color,
-            (int(agent.position.x + 400), int(agent.position.y + 300)),
-            5,
-        )
-
-
-def run_simulation(
-    width, height, radius, velocity, num_agents, num_steps, dt, save_path
-):
+def run_simulation(width, height, radius, velocity, num_agents, num_steps, dt):
     env = Env(width, height, radius, velocity)
     cumulative_hits_over_time_normal = []
     cumulative_hits_over_time_special = []
 
     normal_agent_hits = [0] * num_agents
-    special_agent_hits = [0] * num_agents
+    special_agent_hits = [0] * (num_agents // 3 * 3)
     total_hits_normal = 0
     total_hits_special = 0
 
@@ -58,18 +23,28 @@ def run_simulation(
     initial_speed = velocity
     initial_direction = env.direction
 
-    normal_agents = [Agent(env.get_boundary()) for _ in range(num_agents)]
+    normal_agents = [
+        Agent._create(i, env.get_boundary()) for i in range(num_agents)
+    ]
     agents_type1 = [
-        Agent_with_initial_position(env.get_boundary(), initial_position)
-        for _ in range(num_agents // 3)
+        Agent_with_initial_position.create(
+            num_agents + i, env.get_boundary(), initial_position
+        )
+        for i in range(num_agents // 3)
     ]
     agents_type2 = [
-        Agent_with_initial_speed(env.get_boundary(), initial_speed)
-        for _ in range(num_agents // 3)
+        Agent_with_initial_speed.create(
+            num_agents + num_agents // 3 + i, env.get_boundary(), initial_speed
+        )
+        for i in range(num_agents // 3)
     ]
     agents_type3 = [
-        Agent_with_initial_direction(env.get_boundary(), initial_direction)
-        for _ in range(num_agents // 3)
+        Agent_with_initial_direction.create(
+            num_agents + 2 * num_agents // 3 + i,
+            env.get_boundary(),
+            initial_direction,
+        )
+        for i in range(num_agents // 3)
     ]
 
     all_agents = normal_agents + agents_type1 + agents_type2 + agents_type3
@@ -80,21 +55,14 @@ def run_simulation(
         1 / num_steps
     )
 
-    pygame.init()
-    screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption("Needle Throw Simulation")
-    clock = pygame.time.Clock()
-    FPS = 60
-    frames = []
-
     for step in range(num_steps):
         env.expand_boundary(expansion_factor)
 
         for agent in all_agents:
-            agent.update_boundary(env.get_boundary())
+            Agent.update_boundary(agent, env.get_boundary())
 
         for agent in all_agents:
-            agent.move(dt)
+            Agent.move(agent, dt)
 
         needles_normal = [agent.position for agent in normal_agents]
         needles_special = [
@@ -117,24 +85,6 @@ def run_simulation(
         cumulative_hits_over_time_normal.append(total_hits_normal)
         cumulative_hits_over_time_special.append(total_hits_special)
         env.move_hole(dt)
-
-        screen.fill((255, 255, 255))
-        draw_polygon(screen, env.get_boundary(), (0, 0, 0))
-        draw_hole(screen, env, (255, 0, 0))
-        draw_agents(screen, normal_agents, (0, 0, 255))
-        draw_agents(
-            screen, agents_type1 + agents_type2 + agents_type3, (0, 255, 0)
-        )
-        pygame.display.flip()
-        clock.tick(FPS)
-
-        frame = pygame.surfarray.array3d(screen)
-        frame = frame.transpose([1, 0, 2])
-        frames.append(frame)
-
-    pygame.quit()
-
-    imageio.mimsave(save_path, frames, fps=FPS)
 
     max_hits_normal = max(normal_agent_hits)
     max_hits_special = max(special_agent_hits)

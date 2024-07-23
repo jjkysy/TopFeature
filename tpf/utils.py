@@ -7,6 +7,10 @@ import pandas as pd
 import seaborn as sns
 
 
+def calculate_hits(needles, target_hole):
+    return [needle for needle in needles if target_hole.contains(needle)]
+
+
 def save_file(file: pd.DataFrame, filename):
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     file.to_pickle(filename)
