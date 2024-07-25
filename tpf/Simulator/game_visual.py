@@ -2,18 +2,17 @@ import logging
 
 import imageio
 import networkx as nx
-import pygame
+
 import numpy as np
+import pygame
 from Agent_simulator.agent import (
     Agent,
-    Agent_with_initial_direction,
-    Agent_with_initial_position,
-    Agent_with_initial_speed,
 )
-from Agent_simulator.update_strategy import Para_update_strategies
+from Agent_simulator.update_strategy import Para_update_strategies as Opinion
 from Env_simulator.env import Env
 from Generator.task_top import TaskGraphGenerator as GraphGen
 from shapely.geometry import Point
+from typing import List
 from utils import calculate_hits
 
 logging.basicConfig(level=logging.INFO)
@@ -47,72 +46,32 @@ def draw_agents(screen, agents, color):
         )
 
 
-def update_agents_paths(special_agents, omega_matrix, hits_info):
-    for agent in special_agents:
-        # hit = agent.id in hits_info
-        # Para_update_strategies.HK_update_parameters(
-        #     agent, omega_matrix, special_agents, hit
-        # )
-        Para_update_strategies.simple_update_parameters(agent, hits_info)
+def update_agents(agents: List[Agent], temporary_matrix: np.ndarray, omega_matrix: np.ndarray, hits_info: dict) -> None:
+    for agent in agents:
+        Opinion.FJ_update_parameters_adapt(agent, temporary_matrix, omega_matrix, agents)
+        # Opinion.simple_update_parameters(agent, hits_info)
+    Agent.update_omega_matrix(omega_matrix, hits_info, agents)
 
 
-def run_simulation(
-    width, height, radius, velocity, num_agents, num_steps, dt, save_path
-):
+def run_simulation(width, height, radius, velocity, num_agents, num_steps, dt, save_path):
     env = Env(width, height, radius, velocity)
     cumulative_hits_over_time_normal = []
     cumulative_hits_over_time_special = []
-
     normal_agent_hits = [0] * num_agents
-    special_agent_hits = [0] * (num_agents // 3 * 3)
+    special_agent_hits = [0] * num_agents
     total_hits_normal = 0
     total_hits_special = 0
 
-    initial_position = Point(env.hole_x, env.hole_y)
-    initial_speed = velocity
-    initial_direction = env.direction
-
-    agents_type1 = [
-        Agent_with_initial_position.create(
-            i, env.get_boundary(), initial_position
-        )
-        for i in range(num_agents // 3)
-    ]
-    agents_type2 = [
-        Agent_with_initial_speed.create(
-            num_agents // 3 + i, env.get_boundary(), initial_speed
-        )
-        for i in range(num_agents // 3)
-    ]
-    agents_type3 = [
-        Agent_with_initial_direction.create(
-            2 * num_agents // 3 + i, env.get_boundary(), initial_direction
-        )
-        for i in range(num_agents // 3)
-    ]
-    normal_agents = [
-        Agent._create(num_agents + i, env.get_boundary())
-        for i in range(num_agents)
-    ]
-
-    special_agents = agents_type1 + agents_type2 + agents_type3
-    all_agents = normal_agents + special_agents
+    dynamic_agents = [Agent.create(i, env.get_boundary()) for i in range(num_agents)]
+    static_agents = [Agent.create(i + num_agents, env.get_boundary()) for i in range(num_agents)]
+    all_agents = dynamic_agents + static_agents
 
     initial_side_length = 2 * radius
     final_side_length = 4 * radius
-    expansion_factor = (final_side_length / initial_side_length) ** (
-        1 / num_steps
-    )
+    expansion_factor = (final_side_length / initial_side_length) ** (1 / num_steps)
 
-    # G = GraphGen.generate_layer_hybrid_tasks(num_agents, 1)[0].graph
-    # omega_matrix = nx.to_numpy_array(G)
-
-    G = nx.complete_graph(num_agents)
-    for i in range(num_agents):
-        weights = np.random.rand(num_agents)
-        weights /= np.sum(weights)
-        nx.set_node_attributes(G, {i: {"weights": weights}})
-    omega_matrix = nx.to_numpy_array(G)
+    omega_matrix = np.ones((num_agents, num_agents))
+    np.fill_diagonal(omega_matrix, 0)
 
     pygame.init()
     screen = pygame.display.set_mode((width, height))
@@ -133,18 +92,16 @@ def run_simulation(
         for agent in all_agents:
             Agent.move(agent, dt)
 
-        needles_normal = [agent.position for agent in normal_agents]
-        needles_special = [agent.position for agent in special_agents]
-        hits_normal = calculate_hits(needles_normal, env.get_target_hole())
-        hits_special = calculate_hits(needles_special, env.get_target_hole())
+        hits_normal = calculate_hits(static_agents, env.get_target_hole())
+        hits_special = calculate_hits(dynamic_agents, env.get_target_hole())
 
         for hit in hits_normal:
-            idx = needles_normal.index(hit)
+            idx = hit.id - num_agents
             normal_agent_hits[idx] += 1
         for hit in hits_special:
-            idx = needles_special.index(hit)
+            idx = hit.id
             special_agent_hits[idx] += 1
-            hits_info[special_agents[idx].id] = env.get_target_hole().centroid
+            hits_info[dynamic_agents[idx].id] = hit
 
         total_hits_normal += len(hits_normal)
         total_hits_special += len(hits_special)
@@ -152,15 +109,17 @@ def run_simulation(
         cumulative_hits_over_time_normal.append(total_hits_normal)
         cumulative_hits_over_time_special.append(total_hits_special)
         env.move_hole(dt)
-        print(hits_info)
-        update_agents_paths(special_agents, omega_matrix, hits_info)
-        # update_agents_paths(special_agents, hits_info)
+
+        # random temporary_matrix every step to represent the connection between agents
+        temporary_matrix = (np.random.rand(len(dynamic_agents), len(dynamic_agents)) < 0.1).astype(int)
+        np.fill_diagonal(temporary_matrix, 0)
+        update_agents(dynamic_agents, temporary_matrix, omega_matrix, hits_info)
 
         screen.fill((255, 255, 255))
         draw_polygon(screen, env.get_boundary(), (0, 0, 0))
         draw_hole(screen, env, (255, 0, 0))
-        draw_agents(screen, normal_agents, (0, 0, 255))
-        draw_agents(screen, special_agents, (0, 255, 0))
+        draw_agents(screen, static_agents, (0, 0, 255))
+        draw_agents(screen, dynamic_agents, (0, 255, 0))
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -174,9 +133,5 @@ def run_simulation(
 
     max_hits_normal = max(normal_agent_hits)
     max_hits_special = max(special_agent_hits)
-    return (
-        cumulative_hits_over_time_normal,
-        cumulative_hits_over_time_special,
-        max_hits_normal,
-        max_hits_special,
-    )
+    return cumulative_hits_over_time_normal, cumulative_hits_over_time_special, max_hits_normal, max_hits_special
+

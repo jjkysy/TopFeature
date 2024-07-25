@@ -7,8 +7,15 @@ import pandas as pd
 import seaborn as sns
 
 
-def calculate_hits(needles, target_hole):
-    return [needle for needle in needles if target_hole.contains(needle)]
+# def calculate_hits(needles, target_hole):
+#     return [needle for needle in needles if target_hole.contains(needle)]
+
+def calculate_hits(agents, target_hole):
+    hits_agents = []
+    for agent in agents:
+        if target_hole.contains(agent.position):
+            hits_agents.append(agent)
+    return hits_agents
 
 
 def save_file(file: pd.DataFrame, filename):
