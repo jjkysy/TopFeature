@@ -1,60 +1,93 @@
 import logging
+from typing import List
 
 import imageio
-import networkx as nx
-
 import numpy as np
 import pygame
-from Agent_simulator.agent import (
-    Agent,
-)
+from Agent_simulator.agent import Agent
 from Agent_simulator.update_strategy import Para_update_strategies as Opinion
 from Env_simulator.env import Env
-from Generator.task_top import TaskGraphGenerator as GraphGen
+from matplotlib import pyplot as plt
 from shapely.geometry import Point
-from typing import List
 from utils import calculate_hits
 
 logging.basicConfig(level=logging.INFO)
 
 
-def draw_polygon(screen, boundary, color):
-    pygame.draw.polygon(
-        screen,
-        color,
-        [(int(x + 400), int(y + 300)) for x, y in boundary.exterior.coords],
-        1,
-    )
-
-
-def draw_hole(screen, env, color):
-    pygame.draw.circle(
-        screen,
-        color,
-        (int(env.hole_x + 400), int(env.hole_y + 300)),
-        env.radius,
-    )
-
-
-def draw_agents(screen, agents, color):
+def update_agents(
+    agents: List[Agent],
+    temporary_matrix: np.ndarray,
+    omega_matrix: np.ndarray,
+    hits_info: dict,
+) -> float:
     for agent in agents:
+        Opinion.FJ_update_parameters_adapt(
+            agent, temporary_matrix, omega_matrix, agents
+        )
+        # Opinion.simple_update_parameters(agent, hits_info)
+    change_in_this_step = Agent.update_omega_matrix(omega_matrix, hits_info)
+    return change_in_this_step
+
+
+def run_simulation(
+    width,
+    height,
+    radius,
+    initial_boundary_width,
+    velocity,
+    num_agents,
+    dt,
+    num_steps,
+    FPS,
+    expansion_times,
+    # learning_rate,
+    # theta,
+    # gamma,
+    # epsilon,
+    # batch_size,
+    # q_network_params,
+):
+
+    def draw_polygon(screen, boundary, color):
+        pygame.draw.polygon(
+            screen,
+            color,
+            [
+                (int(x + width / 2), int(y + height / 2))
+                for x, y in boundary.exterior.coords
+            ],
+            1,
+        )
+
+    def draw_hole(screen, env, color):
         pygame.draw.circle(
             screen,
             color,
-            (int(agent.position.x + 400), int(agent.position.y + 300)),
-            5,
+            (int(env.hole_x + width / 2), int(env.hole_y + height / 2)),
+            env.radius,
         )
 
+    def draw_agents(screen, agents, color):
+        for agent in agents:
+            pygame.draw.circle(
+                screen,
+                color,
+                (
+                    int(agent.position.x + width / 2),
+                    int(agent.position.y + height / 2),
+                ),
+                5,
+            )
 
-def update_agents(agents: List[Agent], temporary_matrix: np.ndarray, omega_matrix: np.ndarray, hits_info: dict) -> None:
-    for agent in agents:
-        Opinion.FJ_update_parameters_adapt(agent, temporary_matrix, omega_matrix, agents)
-        # Opinion.simple_update_parameters(agent, hits_info)
-    Agent.update_omega_matrix(omega_matrix, hits_info, agents)
-
-
-def run_simulation(width, height, radius, velocity, num_agents, num_steps, dt, save_path):
-    env = Env(width, height, radius, velocity)
+    save_path = "plots/animation/" + f"simulation_{num_agents}.gif"
+    env = Env(
+        width,
+        height,
+        radius,
+        velocity,
+        initial_boundary_width,
+        expansion_times,
+    )
     cumulative_hits_over_time_normal = []
     cumulative_hits_over_time_special = []
     normal_agent_hits = [0] * num_agents
@@ -62,13 +95,16 @@ def run_simulation(width, height, radius, velocity, num_agents, num_steps, dt, s
     total_hits_normal = 0
     total_hits_special = 0
 
-    dynamic_agents = [Agent.create(i, env.get_boundary()) for i in range(num_agents)]
-    static_agents = [Agent.create(i + num_agents, env.get_boundary()) for i in range(num_agents)]
+    dynamic_agents = [
+        Agent.create(i, env.get_boundary()) for i in range(num_agents)
+    ]
+    static_agents = [
+        Agent.create(i + num_agents, env.get_boundary())
+        for i in range(num_agents)
+    ]
     all_agents = dynamic_agents + static_agents
 
-    initial_side_length = 2 * radius
-    final_side_length = 4 * radius
-    expansion_factor = (final_side_length / initial_side_length) ** (1 / num_steps)
+    expansion_factor = expansion_times ** (1 / num_steps)
 
     omega_matrix = np.ones((num_agents, num_agents))
     np.fill_diagonal(omega_matrix, 0)
@@ -80,6 +116,7 @@ def run_simulation(width, height, radius, velocity, num_agents, num_steps, dt, s
     FPS = 60
 
     frames = []
+    changes_per_step = []
 
     for step in range(num_steps):
         env.expand_boundary(expansion_factor)
@@ -108,12 +145,20 @@ def run_simulation(width, height, radius, velocity, num_agents, num_steps, dt, s
 
         cumulative_hits_over_time_normal.append(total_hits_normal)
         cumulative_hits_over_time_special.append(total_hits_special)
-        env.move_hole(dt)
+        old_position = Point(env.hole_x, env.hole_y)
+        new_position = env.move_hole(dt)
+        env.update_state_transition_matrix(
+            old_position.x, old_position.y, new_position.x, new_position.y
+        )
 
-        # random temporary_matrix every step to represent the connection between agents
-        temporary_matrix = (np.random.rand(len(dynamic_agents), len(dynamic_agents)) < 0.1).astype(int)
+        temporary_matrix = (
+            np.random.rand(len(dynamic_agents), len(dynamic_agents)) < 0.1
+        ).astype(int)
         np.fill_diagonal(temporary_matrix, 0)
-        update_agents(dynamic_agents, temporary_matrix, omega_matrix, hits_info)
+        change_in_this_step = update_agents(
+            dynamic_agents, temporary_matrix, omega_matrix, hits_info
+        )
+        changes_per_step.append(change_in_this_step)
 
         screen.fill((255, 255, 255))
         draw_polygon(screen, env.get_boundary(), (0, 0, 0))
@@ -127,11 +172,31 @@ def run_simulation(width, height, radius, velocity, num_agents, num_steps, dt, s
         frame = frame.transpose([1, 0, 2])
         frames.append(frame)
 
+    # plot the step and change in this step, to show the convergence
+    plt.plot(range(num_steps), changes_per_step)
+    plt.xlabel("Step")
+    plt.ylabel("Change in this step")
+    plt.title("Convergence")
+    plt.savefig("plots/simulation_plots/convergence" + f"_{num_agents}.png")
+    plt.close()
+
     pygame.quit()
 
     imageio.mimsave(save_path, frames, fps=FPS)
 
+    task_matrix = env.state_transition_matrix
+    # print(task_matrix)
+    # assert not all zero
+    assert not np.all(task_matrix == 0)
+    # assert sum of each row is 1 or 0
+    for row in task_matrix:
+        assert np.sum(row) == 1 or np.sum(row) == 0
+
     max_hits_normal = max(normal_agent_hits)
     max_hits_special = max(special_agent_hits)
-    return cumulative_hits_over_time_normal, cumulative_hits_over_time_special, max_hits_normal, max_hits_special
-
+    return (
+        cumulative_hits_over_time_normal,
+        cumulative_hits_over_time_special,
+        max_hits_normal,
+        max_hits_special,
+    )

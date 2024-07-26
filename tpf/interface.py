@@ -74,6 +74,7 @@ class MasEval:
 #     # acceleration: float
 #     boundary: Polygon
 
+
 @dataclass
 class AgentData:
     id: int

@@ -42,50 +42,57 @@ class Para_update_strategies:
 
     @staticmethod
     # common model: change agents' position to the target point
-    def simple_update_parameters(agent: AgentData, hits_info: Dict[int, Point]) -> None:
+    def simple_update_parameters(
+        agent: AgentData, hits_info: Dict[int, Point]
+    ) -> None:
         if agent.id in hits_info:
             target_point = hits_info[agent.id]
             direction_to_target = np.arctan2(
-                target_point.y - agent.mu.y,
-                target_point.x - agent.mu.x
+                target_point.y - agent.mu.y, target_point.x - agent.mu.x
             )
             distance_to_target = np.hypot(
-                target_point.x - agent.mu.x,
-                target_point.y - agent.mu.y
+                target_point.x - agent.mu.x, target_point.y - agent.mu.y
             )
             agent.mu = Point(
-                agent.mu.x + np.cos(direction_to_target) * distance_to_target * 0.1,
-                agent.mu.y + np.sin(direction_to_target) * distance_to_target * 0.1
+                agent.mu.x
+                + np.cos(direction_to_target) * distance_to_target * 0.1,
+                agent.mu.y
+                + np.sin(direction_to_target) * distance_to_target * 0.1,
             )
             agent.theta = max(agent.theta * 0.9, 0.01)  # 逐渐收敛
 
     # TODO: Friedkin-Johnsen Model
     @staticmethod
     def FJ_update_parameters(
-            agent: AgentData, omega_matrix: np.ndarray, agents: list, hit: bool
-        ) -> None:
-            neighbors = [
-                i for i, weight in enumerate(omega_matrix[agent.id]) if weight > 0
-            ]
-            if neighbors:
-                neighbor_info = np.mean(
+        agent: AgentData, omega_matrix: np.ndarray, agents: list, hit: bool
+    ) -> None:
+        neighbors = [
+            i for i, weight in enumerate(omega_matrix[agent.id]) if weight > 0
+        ]
+        if neighbors:
+            neighbor_info = np.mean(
+                [
                     [
-                        [
-                            agents[i].mu,
-                            agents[i].theta,
-                        ]
-                        for i in neighbors
-                    ],
-                    axis=0,
-                )
-                if hit:
-                    p = 0.5
-                    if np.random.rand() < p:
-                        agent.mu = neighbor_info[0]
-                        agent.theta = neighbor_info[1]
+                        agents[i].mu,
+                        agents[i].theta,
+                    ]
+                    for i in neighbors
+                ],
+                axis=0,
+            )
+            if hit:
+                p = 0.5
+                if np.random.rand() < p:
+                    agent.mu = neighbor_info[0]
+                    agent.theta = neighbor_info[1]
 
     @staticmethod
-    def FJ_update_parameters_adapt(agent: AgentData, temporary_matrix: np.ndarray, omega_matrix: np.ndarray, agents: List[AgentData]) -> None:
+    def FJ_update_parameters_adapt(
+        agent: AgentData,
+        temporary_matrix: np.ndarray,
+        omega_matrix: np.ndarray,
+        agents: List[AgentData],
+    ) -> None:
         update_weight = 0.3
         noise_weight = 0.1
         min_theta = 10
@@ -111,8 +118,15 @@ class Para_update_strategies:
         noise_y = np.random.normal(0, noise_weight)
 
         agent.mu = Point(
-            update_weight * agent.mu.x + (1 - update_weight) * updated_mu_x + noise_x,
-            update_weight * agent.mu.y + (1 - update_weight) * updated_mu_y + noise_y
+            update_weight * agent.mu.x
+            + (1 - update_weight) * updated_mu_x
+            + noise_x,
+            update_weight * agent.mu.y
+            + (1 - update_weight) * updated_mu_y
+            + noise_y,
         )
-        agent.theta = max(update_weight * agent.theta + (1 - update_weight) * updated_theta, min_theta)
-        print(agent.mu, agent.theta)
+        agent.theta = max(
+            update_weight * agent.theta + (1 - update_weight) * updated_theta,
+            min_theta,
+        )
+        # print(agent.mu, agent.theta)

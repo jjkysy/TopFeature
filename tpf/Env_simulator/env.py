@@ -4,21 +4,32 @@ from shapely.geometry import Point, Polygon
 
 
 class Env:
-    def __init__(self, width, height, radius, velocity):
+    def __init__(
+        self,
+        width,
+        height,
+        radius,
+        velocity,
+        initial_boundary_width,
+        expansion_times,
+    ):
         self.radius = radius
         self.velocity = velocity
         self.width = width
         self.height = height
-        self.boundary = self.create_square_boundary(radius)
+        self.initial_boundary_width = initial_boundary_width
+        self.boundary = self.create_square_boundary()
         self.hole_x, self.hole_y = (
             self.generate_random_position_within_boundary()
         )
         self.direction = np.random.uniform(0, 2 * np.pi)
+        self.expansion_times = expansion_times
+        self.state_transition_matrix = (
+            self.initialize_state_transition_matrix()
+        )
 
-    def create_square_boundary(self, radius):
-        side_length = (
-            10 * radius
-        )  # Initial side length based on the diameter of the hole
+    def create_square_boundary(self):
+        side_length = self.initial_boundary_width
         square = Polygon(
             [
                 (-side_length / 2, -side_length / 2),
@@ -38,6 +49,38 @@ class Env:
             if self.boundary.contains(point):
                 return x, y
 
+    def initialize_state_transition_matrix(self):
+        size = int((self.initial_boundary_width * self.expansion_times) ** 2)
+        return np.zeros((size, size))
+
+    def get_state_index(self, x, y):
+        min_x, min_y, max_x, max_y = self.boundary.bounds
+        row = int(
+            (y - min_y)
+            / (max_y - min_y)
+            * (self.initial_boundary_width * self.expansion_times)
+        )
+        col = int(
+            (x - min_x)
+            / (max_x - min_x)
+            * (self.initial_boundary_width * self.expansion_times)
+        )
+        return row * self.initial_boundary_width * self.expansion_times + col
+
+    def update_state_transition_matrix(self, prev_x, prev_y, new_x, new_y):
+        prev_state = self.get_state_index(prev_x, prev_y)
+        new_state = self.get_state_index(new_x, new_y)
+        # if state larger than the size of the matrix, ignore
+        if (
+            prev_state >= self.state_transition_matrix.shape[0]
+            or new_state >= self.state_transition_matrix.shape[0]
+        ):
+            return
+        self.state_transition_matrix[prev_state, new_state] += 1
+        self.state_transition_matrix[
+            prev_state
+        ] /= self.state_transition_matrix[prev_state].sum()
+
     def move_hole(self, dt):
         new_x = self.hole_x + self.velocity * np.cos(self.direction) * dt
         new_y = self.hole_y + self.velocity * np.sin(self.direction) * dt
@@ -53,6 +96,7 @@ class Env:
             new_position = Point(new_x, new_y)
 
         self.hole_x, self.hole_y = new_x, new_y
+        return new_position
 
     def calculate_normal_vector(self, point):
         min_x, min_y, max_x, max_y = self.boundary.bounds

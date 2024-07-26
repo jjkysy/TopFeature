@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-
 # def calculate_hits(needles, target_hole):
 #     return [needle for needle in needles if target_hole.contains(needle)]
+
 
 def calculate_hits(agents, target_hole):
     hits_agents = []

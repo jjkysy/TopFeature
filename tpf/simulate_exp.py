@@ -7,25 +7,27 @@ from Simulator.game import run_simulation
 logging.basicConfig(level=logging.INFO)
 
 
-def run_simulation_for_agents(
-    num_agents, width, height, radius, velocity, num_steps, dt
-):
-    return run_simulation(
-        width, height, radius, velocity, num_agents, num_steps, dt
-    )
+params = {
+    "width": 80,
+    "height": 60,
+    "radius": 2,
+    "initial_boundary_width": 10,
+    "velocity": 1,
+    "dt": 1,
+    "num_steps": 1000,
+    "expansion_times": 3,
+}
+
+
+num_agents_list = [10, 20, 30, 50, 100, 200, 300, 500]
+
+
+def run_simulation_for_agents(**params):
+    return run_simulation(**params)
 
 
 def main():
-    width = 800
-    height = 600
-    radius = 20
-    velocity = 5
-    num_agents_list = [15, 30, 150, 300, 900, 1500]
-    num_steps = 100
-    dt = 1
-    storage_paths = {
-        "simulation_path": "plots/simulation_plots/",
-    }
+
     agent_counts = []
     max_hits_normal_list = []
     max_hits_special_list = []
@@ -33,16 +35,9 @@ def main():
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = [
             executor.submit(
-                run_simulation_for_agents,
-                num_agents,
-                width,
-                height,
-                radius,
-                velocity,
-                num_steps,
-                dt,
+                run_simulation_for_agents, num_agents=num, **params
             )
-            for num_agents in num_agents_list
+            for num in num_agents_list
         ]
 
         for future, num_agents in zip(
@@ -59,10 +54,10 @@ def main():
             max_hits_special_list.append(max_hits_special)
 
             plot_hits(
-                num_steps,
+                params["num_steps"],
                 cumulative_hits_over_time_normal,
                 cumulative_hits_over_time_special,
-                save_path=storage_paths["simulation_path"]
+                save_path="plots/simulation_plots/"
                 + f"cumulative_hits_over_time_{num_agents}.png",
             )
 
@@ -70,7 +65,7 @@ def main():
         agent_counts,
         max_hits_normal_list,
         max_hits_special_list,
-        save_path=storage_paths["simulation_path"] + "max_hits.png",
+        save_path="plots/simulation_plots/" + "max_hits.png",
     )
 
     logging.info(f"Agent counts: {agent_counts}")
