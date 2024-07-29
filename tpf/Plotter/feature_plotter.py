@@ -91,22 +91,21 @@ class TaskFeaturesPlotter:
                 "Number of topologies exceeds the number of available colors"
             )
         for i, (topology_name, features) in enumerate(topology_groups):
-            entropies = [
-                feature.information_entropy for feature in features["feature"]
-            ]
             mutual_informations = [
                 feature.mutual_information for feature in features["feature"]
             ]
+            entropies = [
+                feature.node_degree_entropy for feature in features["feature"]
+            ]
             plt.scatter(
-                entropies,
                 mutual_informations,
+                entropies,
                 color=colors[i],
                 label=topology_name,
             )
-
-        plt.title("Entropy vs Mutual Information")
-        plt.xlabel("Entropy")
-        plt.ylabel("Mutual Information")
+        plt.title("Mutual Information vs Entropy")
+        plt.xlabel("Mutual Information")
+        plt.ylabel("Entropy")
         plt.legend()
         plt.tight_layout()
         plot_storage = PlotStorage(storage_path)

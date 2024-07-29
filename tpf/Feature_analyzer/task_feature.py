@@ -1,3 +1,5 @@
+from typing import Dict
+
 import networkx as nx
 import numpy as np
 from interface import GraphData, TaskGraphFeatures
@@ -39,10 +41,36 @@ class TaskFeatures:
         return mutual_info
 
     @classmethod
+    def calculate_path_length_entropy(cls, graph: nx.DiGraph) -> float:
+        path_length_prob: Dict[int, float] = {}
+        for node in range(len(graph)):
+            if node == 0:
+                continue
+            else:
+                paths = nx.all_simple_paths(graph, source=node, target=0)
+                for path in paths:
+                    path_length = len(path) - 1
+                    prob = 1.0
+                    for i in range(len(path) - 1):
+                        prob *= graph[path[i]][path[i + 1]]["weight"]
+                    if path_length in path_length_prob:
+                        path_length_prob[path_length] += prob
+                    else:
+                        path_length_prob[path_length] = prob
+        total_prob = sum(path_length_prob.values())
+        for key in path_length_prob:
+            path_length_prob[key] /= total_prob
+        path_entropy = 0.0
+        for prob in path_length_prob.values():
+            path_entropy -= prob * np.log(prob)
+        return path_entropy
+
+    @classmethod
     def calculate_features(cls, graph_data: GraphData) -> TaskGraphFeatures:
         G = graph_data.graph
         entropy = cls.calculate_entropy(G)
         mutual_info = cls.calculate_mutual_information(G)
+        path_length_entropy = cls.calculate_path_length_entropy(G)
         # calculate the sum of weight*indegree for each node
         weighted_sum_of_indegree = {}
         for node in G:
@@ -57,7 +85,8 @@ class TaskFeatures:
         t_features = TaskGraphFeatures(
             id=graph_data.id,
             subtask_dependency_index=overall_SDI,
-            information_entropy=entropy,
+            node_degree_entropy=entropy,
+            path_length_entropy=path_length_entropy,
             mutual_information=mutual_info,
         )
         return t_features

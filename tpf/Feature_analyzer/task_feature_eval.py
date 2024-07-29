@@ -7,7 +7,6 @@
 
 import numpy as np
 from interface import GraphEval, TaskGraphFeatures
-from sklearn.preprocessing import MinMaxScaler
 
 
 class TaskFeatureEvaluator:
@@ -22,11 +21,9 @@ class TaskFeatureEvaluator:
                 task_feature.subtask_dependency_index,
                 task_feature.mutual_information,
             ]
-        ).reshape(1, -1)
-
-        scaler = MinMaxScaler()
-        normalized_features = scaler.fit_transform(feature_values)
-        dependency = normalized_features.mean()
+        )
+        cvs = np.std(feature_values, ddof=1) / np.mean(feature_values)
+        dependency = np.mean(cvs)
         return dependency
 
     @classmethod
@@ -35,7 +32,8 @@ class TaskFeatureEvaluator:
         Evaluate the uncertainty of the graph
         """
         # TODO: consider entropy for now, may need more features
-        uncertainty = task_feature.information_entropy
+        # uncertainty = task_feature.node_degree_entropy
+        uncertainty = task_feature.path_length_entropy
         return uncertainty
 
     @classmethod
