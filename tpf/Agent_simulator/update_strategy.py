@@ -92,49 +92,55 @@ class Para_update_strategies:
         omega_matrix: np.ndarray,
         agents: List[AgentData],
     ) -> None:
-
         update_weight = 0.5
         noise_weight = 0.1
         min_theta = 10
-        link_percentage = 0.5
-
-        temporary_matrix = (
-            np.random.rand(len_dynamic_agents, len_dynamic_agents)
-            < link_percentage
-        ).astype(int)
-        np.fill_diagonal(temporary_matrix, 0)
-
-        update_matrix = np.multiply(temporary_matrix, omega_matrix)
-        neighbors = [
-            i for i, weight in enumerate(update_matrix[agent.id]) if weight > 0
+        link_percentage_list = [0.1, 0.3, 0.5, 0.7, 0.9]
+        temporary_matrix = np.zeros((5, len_dynamic_agents, len_dynamic_agents))
+        
+        agents_groups = [
+            agents[i * len_dynamic_agents:(i + 1) * len_dynamic_agents]
+            for i in range(5)
         ]
+        
+        for i in range(5):
+            temporary_matrix[i] = (
+                np.random.rand(len_dynamic_agents, len_dynamic_agents)
+                < link_percentage_list[i]
+            ).astype(int)
+            np.fill_diagonal(temporary_matrix[i], 0)
 
-        updated_mu_x = 0
-        updated_mu_y = 0
-        updated_theta = 0
+        def update_policy(agent, agents_group, update_matrix):
+            neighbors = [
+                i for i, weight in enumerate(update_matrix[agent.id]) if weight > 0
+            ]
+            updated_mu_x = 0
+            updated_mu_y = 0
+            updated_theta = 0
+            if neighbors:
+                total_weight = sum(update_matrix[agent.id][i] for i in neighbors)
+                if total_weight > 0:
+                    for i in neighbors:
+                        weight = update_matrix[agent.id][i] / total_weight
+                        updated_mu_x += weight * agents_group[i].mu.x
+                        updated_mu_y += weight * agents_group[i].mu.y
+                        updated_theta += weight * agents_group[i].theta
 
-        if neighbors:
-            total_weight = sum(update_matrix[agent.id][i] for i in neighbors)
-            if total_weight > 0:
-                for i in neighbors:
-                    weight = update_matrix[agent.id][i] / total_weight
-                    updated_mu_x += weight * agents[i].mu.x
-                    updated_mu_y += weight * agents[i].mu.y
-                    updated_theta += weight * agents[i].theta
+            noise_x = np.random.normal(0, noise_weight)
+            noise_y = np.random.normal(0, noise_weight)
+            agent.mu = Point(
+                update_weight * agent.mu.x
+                + (1 - update_weight) * updated_mu_x
+                + noise_x,
+                update_weight * agent.mu.y
+                + (1 - update_weight) * updated_mu_y
+                + noise_y,
+            )
+            agent.theta = max(
+                update_weight * agent.theta + (1 - update_weight) * updated_theta,
+                min_theta,
+            )
 
-        noise_x = np.random.normal(0, noise_weight)
-        noise_y = np.random.normal(0, noise_weight)
-
-        agent.mu = Point(
-            update_weight * agent.mu.x
-            + (1 - update_weight) * updated_mu_x
-            + noise_x,
-            update_weight * agent.mu.y
-            + (1 - update_weight) * updated_mu_y
-            + noise_y,
-        )
-        agent.theta = max(
-            update_weight * agent.theta + (1 - update_weight) * updated_theta,
-            min_theta,
-        )
-        # print(agent.mu, agent.theta)
+        for i in range(5):
+            update_matrix = np.multiply(temporary_matrix[i], omega_matrix)
+            update_policy(agent, agents_groups[i], update_matrix)
