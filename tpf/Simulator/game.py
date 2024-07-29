@@ -19,15 +19,14 @@ save_path = {
 
 def update_agents(
     agents: List[Agent],
-    temporary_matrix: np.ndarray,
+    len_agents: int,
     omega_matrix: np.ndarray,
     hits_info: dict,
 ) -> float:
     for agent in agents:
         Opinion.FJ_update_parameters_adapt(
-            agent, temporary_matrix, omega_matrix, agents
+            agent, len_agents, omega_matrix, agents
         )
-        # Opinion.simple_update_parameters(agent, hits_info)
     change_in_this_step = Agent.update_omega_matrix(omega_matrix, hits_info)
     return change_in_this_step
 
@@ -106,13 +105,8 @@ def run_simulation(
         env.update_state_transition_matrix(
             old_position.x, old_position.y, new_position.x, new_position.y
         )
-
-        temporary_matrix = (
-            np.random.rand(len(dynamic_agents), len(dynamic_agents)) < 0.1
-        ).astype(int)
-        np.fill_diagonal(temporary_matrix, 0)
         change_in_this_step = update_agents(
-            dynamic_agents, temporary_matrix, omega_matrix, hits_info
+            dynamic_agents, num_agents, omega_matrix, hits_info
         )
         changes_per_step.append(change_in_this_step)
 
@@ -124,8 +118,8 @@ def run_simulation(
     plt.savefig(save_path["simulation"] + "convergence" + f"_{num_agents}.png")
     plt.close()
     logging.info(
-        f"Convergence plot saved at\
-            {save_path}simulation/convergence_{num_agents}.png"
+        f"Convergence plot saved at {save_path['simulation']}convergence_"
+        f"{num_agents}.png"
     )
 
     task_matrix = env.state_transition_matrix
@@ -134,7 +128,7 @@ def run_simulation(
         assert np.sum(row) == 1 or np.sum(row) == 0
     np.save(save_path["task_matrix"] + str(num_agents) + ".npy", task_matrix)
     logging.info(
-        f"Task matrix saved at {save_path}task_matrix/{num_agents}.npy"
+        f"Task matrix saved at {save_path['task_matrix']}{num_agents}.npy"
     )
 
     max_hits_normal = max(normal_agent_hits)

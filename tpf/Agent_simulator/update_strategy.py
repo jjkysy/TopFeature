@@ -61,7 +61,6 @@ class Para_update_strategies:
             )
             agent.theta = max(agent.theta * 0.9, 0.01)  # 逐渐收敛
 
-    # TODO: Friedkin-Johnsen Model
     @staticmethod
     def FJ_update_parameters(
         agent: AgentData, omega_matrix: np.ndarray, agents: list, hit: bool
@@ -89,13 +88,22 @@ class Para_update_strategies:
     @staticmethod
     def FJ_update_parameters_adapt(
         agent: AgentData,
-        temporary_matrix: np.ndarray,
+        len_dynamic_agents: int,
         omega_matrix: np.ndarray,
         agents: List[AgentData],
     ) -> None:
-        update_weight = 0.3
+
+        update_weight = 0.5
         noise_weight = 0.1
         min_theta = 10
+        link_percentage = 0.5
+
+        temporary_matrix = (
+            np.random.rand(len_dynamic_agents, len_dynamic_agents)
+            < link_percentage
+        ).astype(int)
+        np.fill_diagonal(temporary_matrix, 0)
+
         update_matrix = np.multiply(temporary_matrix, omega_matrix)
         neighbors = [
             i for i, weight in enumerate(update_matrix[agent.id]) if weight > 0

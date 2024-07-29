@@ -27,6 +27,7 @@ class Env:
         self.state_transition_matrix = (
             self.initialize_state_transition_matrix()
         )
+        self.time_step = 0
 
     def create_square_boundary(self):
         side_length = self.initial_boundary_width
@@ -70,7 +71,6 @@ class Env:
     def update_state_transition_matrix(self, prev_x, prev_y, new_x, new_y):
         prev_state = self.get_state_index(prev_x, prev_y)
         new_state = self.get_state_index(new_x, new_y)
-        # if state larger than the size of the matrix, ignore
         if (
             prev_state >= self.state_transition_matrix.shape[0]
             or new_state >= self.state_transition_matrix.shape[0]
@@ -81,7 +81,12 @@ class Env:
             prev_state
         ] /= self.state_transition_matrix[prev_state].sum()
 
+    def update_velocity(self):
+        self.velocity = 1 + np.sin(self.time_step * 0.1)
+
     def move_hole(self, dt):
+        self.update_velocity()
+        self.time_step += 1
         new_x = self.hole_x + self.velocity * np.cos(self.direction) * dt
         new_y = self.hole_y + self.velocity * np.sin(self.direction) * dt
         new_position = Point(new_x, new_y)

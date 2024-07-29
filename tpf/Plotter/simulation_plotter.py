@@ -1,13 +1,16 @@
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def plot_hits(
     num_steps, cumulative_hits_normal, cumulative_hits_special, save_path
 ):
+    sns.set_theme(style="whitegrid")
     plt.plot(
         range(num_steps),
         cumulative_hits_normal,
         marker="o",
+        markersize=2,
         linestyle="-",
         color="b",
         label="Normal Agents",
@@ -16,6 +19,7 @@ def plot_hits(
         range(num_steps),
         cumulative_hits_special,
         marker="o",
+        markersize=2,
         linestyle="-",
         color="r",
         label="Special Agents",

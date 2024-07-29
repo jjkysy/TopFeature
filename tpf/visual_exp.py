@@ -26,7 +26,7 @@ params = {
 }
 
 
-num_agents_list = [10, 20, 50, 100, 200, 500]
+num_agents_list = [10, 20, 30, 50, 100, 200, 300, 500]
 
 storage_paths = {
     "simulation_path": "plots/simulation_plots/",

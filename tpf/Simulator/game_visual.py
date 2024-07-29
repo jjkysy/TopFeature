@@ -16,15 +16,14 @@ logging.basicConfig(level=logging.INFO)
 
 def update_agents(
     agents: List[Agent],
-    temporary_matrix: np.ndarray,
+    len_agents: int,
     omega_matrix: np.ndarray,
     hits_info: dict,
 ) -> float:
     for agent in agents:
         Opinion.FJ_update_parameters_adapt(
-            agent, temporary_matrix, omega_matrix, agents
+            agent, len_agents, omega_matrix, agents
         )
-        # Opinion.simple_update_parameters(agent, hits_info)
     change_in_this_step = Agent.update_omega_matrix(omega_matrix, hits_info)
     return change_in_this_step
 
@@ -76,7 +75,7 @@ def run_simulation(
                     int(agent.position.x + width / 2),
                     int(agent.position.y + height / 2),
                 ),
-                5,
+                1,
             )
 
     save_path = "plots/animation/" + f"simulation_{num_agents}.gif"
@@ -150,13 +149,10 @@ def run_simulation(
         env.update_state_transition_matrix(
             old_position.x, old_position.y, new_position.x, new_position.y
         )
+        # print("Now the speed is: ", env.velocity)
 
-        temporary_matrix = (
-            np.random.rand(len(dynamic_agents), len(dynamic_agents)) < 0.1
-        ).astype(int)
-        np.fill_diagonal(temporary_matrix, 0)
         change_in_this_step = update_agents(
-            dynamic_agents, temporary_matrix, omega_matrix, hits_info
+            dynamic_agents, num_agents, omega_matrix, hits_info
         )
         changes_per_step.append(change_in_this_step)
 
