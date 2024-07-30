@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Tuple
 
 import imageio
 import numpy as np
@@ -7,25 +7,34 @@ import pygame
 from Agent_simulator.agent import Agent
 from Agent_simulator.update_strategy import Para_update_strategies as Opinion
 from Env_simulator.env import Env
-from matplotlib import pyplot as plt
+from Plotter.simulation_plotter import plot_convergence
 from shapely.geometry import Point
 from utils import calculate_hits
 
 logging.basicConfig(level=logging.INFO)
+
+save_path_dict = {
+    "simulation": "plots/simulation_plots/",
+    "task_matrix": "plots/task_matrix/",
+    "animation": "plots/animation/",
+}
 
 
 def update_agents(
     agents: List[Agent],
     len_agents: int,
     omega_matrix: np.ndarray,
-    hits_info: dict,
-) -> float:
+    hits_info: List[dict],
+    link_percentage: float,
+) -> Tuple[float, np.ndarray]:
     for agent in agents:
         Opinion.FJ_update_parameters_adapt(
-            agent, len_agents, omega_matrix, agents
+            agent, len_agents, omega_matrix, agents, link_percentage
         )
-    change_in_this_step = Agent.update_omega_matrix(omega_matrix, hits_info)
-    return change_in_this_step
+    change_in_this_step, omega_matrix = Agent.update_omega_matrix(
+        omega_matrix, hits_info
+    )
+    return change_in_this_step, omega_matrix
 
 
 def run_simulation(
@@ -39,12 +48,6 @@ def run_simulation(
     num_steps,
     FPS,
     expansion_times,
-    # learning_rate,
-    # theta,
-    # gamma,
-    # epsilon,
-    # batch_size,
-    # q_network_params,
 ):
 
     def draw_polygon(screen, boundary, color):
@@ -78,7 +81,7 @@ def run_simulation(
                 1,
             )
 
-    save_path = "plots/animation/" + f"simulation_{num_agents}.gif"
+    # create environment
     env = Env(
         width,
         height,
@@ -87,26 +90,28 @@ def run_simulation(
         initial_boundary_width,
         expansion_times,
     )
-    cumulative_hits_over_time_normal = []
-    cumulative_hits_over_time_special = []
-    normal_agent_hits = [0] * num_agents
-    special_agent_hits = [0] * num_agents
-    total_hits_normal = 0
-    total_hits_special = 0
+    # initialize variables
+    cumulative_hits_over_time = [[] for _ in range(6)]
+    agent_hits = [[0] * num_agents for _ in range(6)]
+    total_hits = [0] * 6
+    link_percentage_list = [0.1, 0.3, 0.5, 0.7, 0.9]
 
+    omega_matrices = [np.ones((num_agents, num_agents)) for _ in range(5)]
+    for omega_matrix in omega_matrices:
+        np.fill_diagonal(omega_matrix, 0)
+
+    expansion_factor = expansion_times ** (1 / num_steps)
+    changes_per_step = []
+
+    # create agents: 5 groups of dynamic agents and 1 group of static agents
     dynamic_agents = [
-        Agent.create(i, env.get_boundary()) for i in range(num_agents)
+        Agent.create(i, env.get_boundary()) for i in range(num_agents * 5)
     ]
     static_agents = [
-        Agent.create(i + num_agents, env.get_boundary())
+        Agent.create(i + 5 * num_agents, env.get_boundary())
         for i in range(num_agents)
     ]
     all_agents = dynamic_agents + static_agents
-
-    expansion_factor = expansion_times ** (1 / num_steps)
-
-    omega_matrix = np.ones((num_agents, num_agents))
-    np.fill_diagonal(omega_matrix, 0)
 
     pygame.init()
     screen = pygame.display.set_mode((width, height))
@@ -117,33 +122,41 @@ def run_simulation(
     frames = []
     changes_per_step = []
 
+    # start simulation
     for step in range(num_steps):
+        # expand polygon and move the agents
         env.expand_boundary(expansion_factor)
-
         for agent in all_agents:
             Agent.update_boundary(agent, env.get_boundary())
-
-        hits_info = {}
-
+        hits_info = [{} for _ in range(5)]
         for agent in all_agents:
             Agent.move(agent, dt)
 
-        hits_normal = calculate_hits(static_agents, env.get_target_hole())
-        hits_special = calculate_hits(dynamic_agents, env.get_target_hole())
+        # five group of dynamic agents
+        dynamic_agents_groups = [
+            dynamic_agents[slice(i * num_agents, (i + 1) * num_agents)]
+            for i in range(5)
+        ]
 
-        for hit in hits_normal:
-            idx = hit.id - num_agents
-            normal_agent_hits[idx] += 1
-        for hit in hits_special:
-            idx = hit.id
-            special_agent_hits[idx] += 1
-            hits_info[dynamic_agents[idx].id] = hit
+        # calculate hits
+        hits = [calculate_hits(static_agents, env.get_target_hole())] + [
+            calculate_hits(group, env.get_target_hole())
+            for group in dynamic_agents_groups
+        ]
 
-        total_hits_normal += len(hits_normal)
-        total_hits_special += len(hits_special)
+        # update cumulative hits info
+        for i, hit_group in enumerate(hits):
+            for hit in hit_group:
+                idx = hit.id % num_agents
+                agent_hits[i][idx] += 1
+                if i > 0:
+                    hits_info[i - 1][
+                        dynamic_agents_groups[i - 1][idx].id
+                    ] = hit
+            total_hits[i] += len(hit_group)
+            cumulative_hits_over_time[i].append(total_hits[i])
 
-        cumulative_hits_over_time_normal.append(total_hits_normal)
-        cumulative_hits_over_time_special.append(total_hits_special)
+        # move the hole
         old_position = Point(env.hole_x, env.hole_y)
         new_position = env.move_hole(dt)
         env.update_state_transition_matrix(
@@ -151,10 +164,20 @@ def run_simulation(
         )
         # print("Now the speed is: ", env.velocity)
 
-        change_in_this_step = update_agents(
-            dynamic_agents, num_agents, omega_matrix, hits_info
+        # update agents with omega matrix, and calculate change in this step
+        change_in_this_step = 0
+        for i, group in enumerate(dynamic_agents_groups):
+            change, omega_matrices[i] = update_agents(
+                group,
+                num_agents,
+                omega_matrices[i],
+                hits_info[i],
+                link_percentage_list[i],
+            )
+            change_in_this_step += change
+        changes_per_step.append(
+            change_in_this_step / len(dynamic_agents_groups)
         )
-        changes_per_step.append(change_in_this_step)
 
         screen.fill((255, 255, 255))
         draw_polygon(screen, env.get_boundary(), (0, 0, 0))
@@ -168,31 +191,38 @@ def run_simulation(
         frame = frame.transpose([1, 0, 2])
         frames.append(frame)
 
-    # plot the step and change in this step, to show the convergence
-    plt.plot(range(num_steps), changes_per_step)
-    plt.xlabel("Step")
-    plt.ylabel("Change in this step")
-    plt.title("Convergence")
-    plt.savefig("plots/simulation_plots/convergence" + f"_{num_agents}.png")
-    plt.close()
+    # plot the convergence graph with change per step
+    save_path = (
+        save_path_dict["simulation"] + "convergence" + f"_{num_agents}.png"
+    )
+    plot_convergence(num_steps, changes_per_step, save_path)
+    logging.info(
+        f"Convergence plot saved at {save_path_dict['simulation']}convergence_"
+        f"{num_agents}.png"
+    )
 
-    pygame.quit()
-
-    imageio.mimsave(save_path, frames, fps=FPS)
-
+    # save task matrix and check its properties
     task_matrix = env.state_transition_matrix
-    # print(task_matrix)
-    # assert not all zero
     assert not np.all(task_matrix == 0)
-    # assert sum of each row is 1 or 0
     for row in task_matrix:
         assert np.sum(row) == 1 or np.sum(row) == 0
+    np.save(
+        save_path_dict["task_matrix"] + str(num_agents) + ".npy", task_matrix
+    )
+    logging.info(
+        f"Task matrix saved at {save_path_dict['task_matrix']}{num_agents}.npy"
+    )
 
-    max_hits_normal = max(normal_agent_hits)
-    max_hits_special = max(special_agent_hits)
+    pygame.quit()
+    animation_save_path = (
+        save_path_dict["animation"] + f"simulation_{num_agents}.gif"
+    )
+    imageio.mimsave(animation_save_path, frames, fps=FPS)
+    logging.info(f"Animation saved at {animation_save_path}")
+
+    # return cumulative hits over time and max hits
+    max_hits = [max(hits) for hits in agent_hits]
     return (
-        cumulative_hits_over_time_normal,
-        cumulative_hits_over_time_special,
-        max_hits_normal,
-        max_hits_special,
+        *cumulative_hits_over_time,
+        *max_hits,
     )
