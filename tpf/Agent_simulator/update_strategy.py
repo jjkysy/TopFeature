@@ -1,89 +1,151 @@
-from typing import Dict, List
+from typing import List
 
 import numpy as np
-from interface import AgentData
+from interface import AgentData, ContiAgent
 from shapely.geometry import Point
 
 
 class Para_update_strategies:
     @staticmethod
-    # Hegselmann-Krause model
-    def HK_update_parameters(
-        agent: AgentData, omega_matrix: np.ndarray, agents: list, hit: bool
+    def simple_update_parameters(
+        agent: ContiAgent,
+        len_dynamic_agents: int,
+        omega_matrix: np.ndarray,
+        agents: List[ContiAgent],
+        temporary_matrix: np.ndarray,
     ) -> None:
-        neighbors = [
-            i for i, weight in enumerate(omega_matrix[agent.id]) if weight > 0
-        ]
-        if neighbors:
-            neighbor_info = np.mean(
-                [
-                    [
-                        agents[i].direction,
-                        agents[i].speed,
-                    ]
-                    for i in neighbors
-                ],
-                axis=0,
-            )
-            if hit:
-                agent.direction = (agent.direction + neighbor_info[0]) / 2
-                agent.speed = (agent.speed + neighbor_info[1]) / 2
-            else:
-                agent.direction = (agent.direction - neighbor_info[0]) / 2
-                agent.speed = (agent.speed - neighbor_info[1]) / 2
+        """
+        param agent: agent to update
+        param len_dynamic_agents: total number of agents
+        param omega_matrix: matrix of weights
+        param agents: list of agents
+        param temporary_matrix: temporary matrix
 
-            max_direction_change = np.pi / 6
-            direction_diff = agent.direction - neighbor_info[0]
-            if abs(direction_diff) > max_direction_change:
-                agent.direction = (
-                    neighbor_info[0]
-                    + np.sign(direction_diff) * max_direction_change
+        This function is used to update the Continuous movement of agents
+        """
+
+        update_weight = 0.9
+        beta = 0.9
+
+        update_matrix = np.multiply(temporary_matrix, omega_matrix)
+
+        # 获取所有活跃代理的索引
+        active_agents = [
+            i
+            for i, weight in enumerate(
+                update_matrix[agent.id % len_dynamic_agents]
+            )
+            if weight > 0
+        ]
+
+        if len(active_agents) >= 2:
+            # 随机选择一个邻居
+            neighbors = [i for i in active_agents if i != agent.id]
+            Ji = np.random.choice(neighbors)
+
+            # 以概率 β 更新代理的状态
+            if np.random.rand() < beta:
+                updated_position_x = (
+                    update_weight * agents[Ji].position.x
+                    + (1 - update_weight) * agent.position.x
+                )
+                updated_position_y = (
+                    update_weight * agents[Ji].position.y
+                    + (1 - update_weight) * agent.position.y
+                )
+                updated_position = Point(
+                    updated_position_x, updated_position_y
+                )
+                updated_speed = (
+                    update_weight * agents[Ji].speed
+                    + (1 - update_weight) * agent.speed
                 )
 
-    @staticmethod
-    # common model: change agents' position to the target point
-    def simple_update_parameters(
-        agent: AgentData, hits_info: Dict[int, Point]
-    ) -> None:
-        if agent.id in hits_info:
-            target_point = hits_info[agent.id]
-            direction_to_target = np.arctan2(
-                target_point.y - agent.mu.y, target_point.x - agent.mu.x
-            )
-            distance_to_target = np.hypot(
-                target_point.x - agent.mu.x, target_point.y - agent.mu.y
-            )
-            agent.mu = Point(
-                agent.mu.x
-                + np.cos(direction_to_target) * distance_to_target * 0.1,
-                agent.mu.y
-                + np.sin(direction_to_target) * distance_to_target * 0.1,
-            )
-            agent.theta = max(agent.theta * 0.9, 0.01)
+                if agent.boundary.contains(
+                    updated_position
+                ) or agent.boundary.touches(updated_position):
+                    agent.position = updated_position
+                else:
+                    print("Agent is out of boundary")
+                    agent.position = agent.position
+
+                agent.speed = updated_speed
+            else:
+                pass
+        else:
+            pass
 
     @staticmethod
     def FJ_update_parameters(
-        agent: AgentData, omega_matrix: np.ndarray, agents: list, hit: bool
+        agent: ContiAgent,
+        len_dynamic_agents: int,
+        omega_matrix: np.ndarray,
+        agents: List[ContiAgent],
+        temporary_matrix: np.ndarray,
     ) -> None:
-        neighbors = [
-            i for i, weight in enumerate(omega_matrix[agent.id]) if weight > 0
-        ]
-        if neighbors:
-            neighbor_info = np.mean(
-                [
-                    [
-                        agents[i].mu,
-                        agents[i].theta,
-                    ]
-                    for i in neighbors
-                ],
-                axis=0,
+        """
+        param agent: agent to update
+        param len_dynamic_agents: total number of agents
+        param omega_matrix: matrix of weights
+        param agents: list of agents
+        param temporary_matrix: temporary matrix
+
+        This function is used to update the Continuous movement of agents
+        """
+
+        update_weight = 0.5
+        beta = 0.5
+
+        update_matrix = np.multiply(temporary_matrix, omega_matrix)
+
+        # 获取所有活跃代理的索引
+        active_agents = [
+            i
+            for i, weight in enumerate(
+                update_matrix[agent.id % len_dynamic_agents]
             )
-            if hit:
-                p = 0.5
-                if np.random.rand() < p:
-                    agent.mu = neighbor_info[0]
-                    agent.theta = neighbor_info[1]
+            if weight > 0
+        ]
+
+        update_position_x = 0
+        update_position_y = 0
+        update_speed = 0
+
+        if active_agents:
+            total_weight = sum(
+                update_matrix[agent.id % len_dynamic_agents][i]
+                for i in active_agents
+            )
+            if total_weight > 0:
+                for i in active_agents:
+                    weight = (
+                        update_matrix[agent.id % len_dynamic_agents][i]
+                        / total_weight
+                    )
+                    update_position_x += weight * agents[i].position.x
+                    update_position_y += weight * agents[i].position.y
+                    update_speed += weight * agents[i].speed
+
+        if np.random.rand() < beta:
+            updated_position = Point(
+                update_weight * update_position_x
+                + (1 - update_weight) * agent.position.x,
+                update_weight * update_position_y
+                + (1 - update_weight) * agent.position.y,
+            )
+            updated_speed = (
+                update_weight * update_speed
+                + (1 - update_weight) * agent.speed
+            )
+
+            if agent.boundary.contains(
+                updated_position
+            ) or agent.boundary.touches(updated_position):
+                agent.position = updated_position
+                agent.speed = updated_speed
+            else:
+                # print("Agent is out of boundary")
+                agent.position = agent.position
 
     @staticmethod
     def FJ_update_parameters_adapt(
@@ -91,20 +153,16 @@ class Para_update_strategies:
         len_dynamic_agents: int,
         omega_matrix: np.ndarray,
         agents: List[AgentData],
-        link_percentage: float,
+        temporary_matrix: np.ndarray,
     ) -> None:
 
         update_weight = 0.1
         noise_weight = 0.1
         min_theta = 10
 
-        temporary_matrix = (
-            np.random.rand(len_dynamic_agents, len_dynamic_agents)
-            < link_percentage
-        ).astype(int)
-        np.fill_diagonal(temporary_matrix, 0)
-
-        update_matrix = np.multiply(temporary_matrix, omega_matrix)
+        update_matrix = np.multiply(
+            temporary_matrix, omega_matrix
+        )  # temporary_matrix
 
         neighbors = [
             i
@@ -137,15 +195,15 @@ class Para_update_strategies:
         noise_y = np.random.normal(0, noise_weight)
 
         agent.mu = Point(
-            update_weight * agent.mu.x
-            + (1 - update_weight) * updated_mu_x
+            update_weight * updated_mu_x
+            + (1 - update_weight) * agent.mu.x
             + noise_x,
-            update_weight * agent.mu.y
-            + (1 - update_weight) * updated_mu_y
+            update_weight * updated_mu_y
+            + (1 - update_weight) * agent.mu.y
             + noise_y,
         )
         agent.theta = max(
-            update_weight * agent.theta + (1 - update_weight) * updated_theta,
+            update_weight * updated_theta + (1 - update_weight) * agent.theta,
             min_theta,
         )
         # print(agent.mu, agent.theta)

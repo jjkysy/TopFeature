@@ -8,11 +8,11 @@ def plot_hits(num_steps, *cumulative_hits_over_time, save_path):
     colors = ["b", "g", "r", "c", "m", "y"]
     labels = [
         "No Topology",
-        "Topology 0.1",
-        "Topology 0.3",
-        "Topology 0.5",
-        "Topology 0.7",
-        "Topology 0.9",
+        "Mesh Topology(10%)",
+        "Mesh Topology(50%)",
+        "Mesh Topology(90%)",
+        "Star Topology",
+        "Chain Topology",
     ]
 
     for hits, color, label in zip(cumulative_hits_over_time, colors, labels):
@@ -49,11 +49,11 @@ def plot_max_hits(agent_counts_list, max_hits_list, save_path):
     colors = ["b", "g", "r", "c", "m", "y"]
     labels = [
         "No Topology",
-        "Topology 0.1",
-        "Topology 0.3",
-        "Topology 0.5",
-        "Topology 0.7",
-        "Topology 0.9",
+        "Mesh Topology(10%)",
+        "Mesh Topology(50%)",
+        "Mesh Topology(90%)",
+        "Star Topology",
+        "Chain Topology",
     ]
 
     # range is the length of each tuple in the max_hits_list

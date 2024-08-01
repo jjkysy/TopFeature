@@ -65,14 +65,14 @@ class MasEval:
     TWT: float = 0
 
 
-# @dataclass
-# class AgentData:
-#     id: int
-#     position: Point
-#     direction: float
-#     speed: float
-#     # acceleration: float
-#     boundary: Polygon
+@dataclass
+class ContiAgent:
+    id: int
+    position: Point
+    direction: float
+    speed: float
+    # acceleration: float
+    boundary: Polygon
 
 
 @dataclass

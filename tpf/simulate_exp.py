@@ -14,10 +14,12 @@ params = {
     "velocity": 1,
     "dt": 1,
     "num_steps": 2000,
-    "expansion_times": 3,
+    "expansion_times": 5,
 }
 
-num_agents_list = [10, 20, 30, 50, 80, 100]  # 200, 300, 400
+num_agents_list = [10, 20, 30, 50, 80]
+# [200, 300]
+# [10, 20, 30, 50, 80, 100]
 
 
 def run_simulation_for_agents(num_agents, **params):

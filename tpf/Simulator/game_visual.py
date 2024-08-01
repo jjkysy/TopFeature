@@ -4,7 +4,7 @@ from typing import List, Tuple
 import imageio
 import numpy as np
 import pygame
-from Agent_simulator.agent import Agent
+from Agent_simulator.agent import _Agent  # Agent
 from Agent_simulator.update_strategy import Para_update_strategies as Opinion
 from Env_simulator.env import Env
 from Plotter.simulation_plotter import plot_convergence
@@ -21,17 +21,20 @@ save_path_dict = {
 
 
 def update_agents(
-    agents: List[Agent],
+    agents: List[_Agent],
     len_agents: int,
     omega_matrix: np.ndarray,
     hits_info: List[dict],
-    link_percentage: float,
+    temp_matrix: np.ndarray,
 ) -> Tuple[float, np.ndarray]:
     for agent in agents:
-        Opinion.FJ_update_parameters_adapt(
-            agent, len_agents, omega_matrix, agents, link_percentage
+        # Opinion.FJ_update_parameters_adapt(
+        #     agent, len_agents, omega_matrix, agents, temp_matrix
+        # )
+        Opinion.FJ_update_parameters(
+            agent, len_agents, omega_matrix, agents, temp_matrix
         )
-    change_in_this_step, omega_matrix = Agent.update_omega_matrix(
+    change_in_this_step, omega_matrix = _Agent.update_omega_matrix(
         omega_matrix, hits_info
     )
     return change_in_this_step, omega_matrix
@@ -81,6 +84,35 @@ def run_simulation(
                 1,
             )
 
+    def create_adjcacency_matrix(
+        num_agents, link_percentage_list
+    ) -> list[np.array]:
+        # create a adjcency matrix to represent a mesh topology
+        matrix_to_return = []
+        for link_percentage in link_percentage_list:
+            mesh_adjacency_matrix = (
+                np.random.rand(num_agents, num_agents) < link_percentage
+            ).astype(int)
+            np.fill_diagonal(mesh_adjacency_matrix, 0)
+            matrix_to_return.append(mesh_adjacency_matrix)
+
+        # create a adjcency matrix to represent a star topology
+        star_adjacency_matrix = np.zeros((num_agents, num_agents))
+        star_adjacency_matrix[:, 0] = 1
+        star_adjacency_matrix[0, :] = 1
+        np.fill_diagonal(star_adjacency_matrix, 0)
+        matrix_to_return.append(star_adjacency_matrix)
+
+        # create a adjcency matrix to represent a ring topology
+        ring_adjacency_matrix = np.zeros((num_agents, num_agents))
+        for i in range(num_agents):
+            ring_adjacency_matrix[i, (i + 1) % num_agents] = 1
+            ring_adjacency_matrix[(i + 1) % num_agents, i] = 1
+        np.fill_diagonal(ring_adjacency_matrix, 0)
+        matrix_to_return.append(ring_adjacency_matrix)
+
+        return matrix_to_return
+
     # create environment
     env = Env(
         width,
@@ -94,7 +126,7 @@ def run_simulation(
     cumulative_hits_over_time = [[] for _ in range(6)]
     agent_hits = [[0] * num_agents for _ in range(6)]
     total_hits = [0] * 6
-    link_percentage_list = [0.1, 0.3, 0.5, 0.7, 0.9]
+    link_percentage_list = [0.1, 0.5, 0.9]  # 0.1, 0.3, 0.5, 0.7, 0.9
 
     omega_matrices = [np.ones((num_agents, num_agents)) for _ in range(5)]
     for omega_matrix in omega_matrices:
@@ -105,10 +137,10 @@ def run_simulation(
 
     # create agents: 5 groups of dynamic agents and 1 group of static agents
     dynamic_agents = [
-        Agent.create(i, env.get_boundary()) for i in range(num_agents * 5)
+        _Agent.create(i, env.get_boundary()) for i in range(num_agents * 5)
     ]
     static_agents = [
-        Agent.create(i + 5 * num_agents, env.get_boundary())
+        _Agent.create(i + 5 * num_agents, env.get_boundary())
         for i in range(num_agents)
     ]
     all_agents = dynamic_agents + static_agents
@@ -127,10 +159,15 @@ def run_simulation(
         # expand polygon and move the agents
         env.expand_boundary(expansion_factor)
         for agent in all_agents:
-            Agent.update_boundary(agent, env.get_boundary())
+            _Agent.update_boundary(agent, env.get_boundary())
         hits_info = [{} for _ in range(5)]
         for agent in all_agents:
-            Agent.move(agent, dt)
+            _Agent.move(agent, dt)
+        # check if agents are within the boundary or on the boundary
+        for agent in all_agents:
+            assert env.get_boundary().contains(
+                agent.position
+            ) or env.get_boundary().touches(agent.position)
 
         # five group of dynamic agents
         dynamic_agents_groups = [
@@ -166,13 +203,16 @@ def run_simulation(
 
         # update agents with omega matrix, and calculate change in this step
         change_in_this_step = 0
+        temp_matrix_list = create_adjcacency_matrix(
+            num_agents, link_percentage_list
+        )
         for i, group in enumerate(dynamic_agents_groups):
             change, omega_matrices[i] = update_agents(
                 group,
                 num_agents,
                 omega_matrices[i],
                 hits_info[i],
-                link_percentage_list[i],
+                temp_matrix_list[i],
             )
             change_in_this_step += change
         changes_per_step.append(
@@ -183,7 +223,9 @@ def run_simulation(
         draw_polygon(screen, env.get_boundary(), (0, 0, 0))
         draw_hole(screen, env, (255, 0, 0))
         draw_agents(screen, static_agents, (0, 0, 255))
-        draw_agents(screen, dynamic_agents, (0, 255, 0))
+        draw_agents(screen, dynamic_agents_groups[2], (0, 255, 0))
+        # draw_agents(screen, dynamic_agents_groups[1], (255, 0, 255))
+        # draw_agents(screen, dynamic_agents_groups[2], (255, 255, 0))
         pygame.display.flip()
         clock.tick(FPS)
 
