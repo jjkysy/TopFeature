@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 from uuid import UUID
 
 import networkx as nx
+from shapely.geometry import Point, Polygon
 
 
 @dataclass
@@ -62,3 +63,22 @@ class MasEval:
     mas_eval: Optional[GraphEval] = None
     TCT: float = 0
     TWT: float = 0
+
+
+@dataclass
+class ContiAgent:
+    id: int
+    position: Point
+    direction: float
+    speed: float
+    # acceleration: float
+    boundary: Polygon
+
+
+@dataclass
+class AgentData:
+    id: int
+    position: Point
+    mu: Point
+    theta: float
+    boundary: Polygon

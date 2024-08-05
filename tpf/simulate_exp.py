@@ -1,82 +1,71 @@
-import concurrent.futures
 import logging
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
-from Env_simulator.game import run_simulation
 from Plotter.simulation_plotter import plot_hits, plot_max_hits
+from Simulator.game import run_simulation
 
 logging.basicConfig(level=logging.INFO)
 
+params = {
+    "width": 80,
+    "height": 60,
+    "radius": 2,
+    "initial_boundary_width": 10,
+    "velocity": 1,
+    "dt": 1,
+    "num_steps": 2000,
+    "expansion_times": 5,
+}
 
-def run_simulation_for_agents(
-    num_agents, width, height, radius, velocity, num_steps, dt
-):
-    return run_simulation(
-        width, height, radius, velocity, num_agents, num_steps, dt
-    )
+num_agents_list = [10, 20, 30, 50, 80]
+# [200, 300]
+# [10, 20, 30, 50, 80, 100]
+
+
+def run_simulation_for_agents(num_agents, **params):
+    return run_simulation(num_agents=num_agents, **params)
 
 
 def main():
-    width = 800
-    height = 600
-    radius = 20
-    velocity = 5
-    num_agents_list = [15, 30, 150, 300, 900, 1500]
-    num_steps = 100
-    dt = 1
-    storage_paths = {
-        "simulation_path": "plots/simulation_plots/",
-        # add ...
-    }
-    agent_counts = []
-    max_hits_normal_list = []
-    max_hits_special_list = []
+    agent_counts_list = []
+    max_hits_list = []
 
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = [
+    with ProcessPoolExecutor() as executor:
+        futures = {
             executor.submit(
-                run_simulation_for_agents,
-                num_agents,
-                width,
-                height,
-                radius,
-                velocity,
-                num_steps,
-                dt,
-            )
+                run_simulation_for_agents, num_agents, **params
+            ): num_agents
             for num_agents in num_agents_list
-        ]
+        }
 
-        for future, num_agents in zip(
-            concurrent.futures.as_completed(futures), num_agents_list
-        ):
-            (
-                cumulative_hits_over_time_normal,
-                cumulative_hits_over_time_special,
-                max_hits_normal,
-                max_hits_special,
-            ) = future.result()
-            agent_counts.append(num_agents)
-            max_hits_normal_list.append(max_hits_normal)
-            max_hits_special_list.append(max_hits_special)
+        for future in as_completed(futures):
+            num_agents = futures[future]
+            try:
+                result = future.result()
+                cumulative_hits_over_time = result[slice(0, len(result) // 2)]
+                max_hits = result[slice(len(result) // 2, len(result))]
+                agent_counts_list.append(num_agents)
+                max_hits_list.append(max_hits)
 
-            plot_hits(
-                num_steps,
-                cumulative_hits_over_time_normal,
-                cumulative_hits_over_time_special,
-                save_path=storage_paths["simulation_path"]
-                + f"cumulative_hits_over_time_{num_agents}.png",
-            )
+                plot_hits(
+                    params["num_steps"],
+                    *cumulative_hits_over_time,
+                    save_path=(
+                        f"plots/simulation_plots/"
+                        f"cumulative_hits_over_time_{num_agents}.png"
+                    ),
+                )
+            except Exception as exc:
+                logging.error(
+                    f"Simulation for {num_agents} agents"
+                    f"generated an exception: {exc}"
+                )
 
     plot_max_hits(
-        agent_counts,
-        max_hits_normal_list,
-        max_hits_special_list,
-        save_path=storage_paths["simulation_path"] + "max_hits.png",
+        agent_counts_list,
+        max_hits_list,
+        save_path="plots/simulation_plots/max_hits.png",
     )
-
-    logging.info(f"Agent counts: {agent_counts}")
-    logging.info(f"Max hits list (Normal Agents): {max_hits_normal_list}")
-    logging.info(f"Max hits list (Special Agents): {max_hits_special_list}")
 
 
 if __name__ == "__main__":
