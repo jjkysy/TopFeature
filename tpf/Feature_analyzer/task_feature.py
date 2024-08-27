@@ -40,6 +40,42 @@ class TaskFeatures:
                     )
         return mutual_info
 
+    # @classmethod
+    # def calculate_path_length_entropy(
+    #     cls,
+    #     graph: nx.DiGraph,
+    #     max_path_length: int = 5,
+    #     sample_size: int = 100
+    #     ) -> float: path_length_prob: Dict[int, float] = defaultdict(float)
+
+    #     # 采样路径
+    #     all_paths = []
+    #     nodes = list(graph.nodes)
+    #     np.random.shuffle(nodes)
+
+    #     for node in nodes[:sample_size]:
+    #         if node == 0:
+    #             continue
+    #         paths = nx.all_simple_paths(graph, source=node, target=0,
+    #                                        cutoff=max_path_length)
+    #         all_paths.extend(paths)
+
+    #     # 计算路径长度概率
+    #     for path in all_paths:
+    #         path_length = len(path) - 1
+    #         if path_length > max_path_length:
+    #             continue
+    #         prob = np.prod([graph[path[i]][path[i + 1]]["weight"]
+    #                       for i in range(len(path) - 1)])
+    #         path_length_prob[path_length] += prob
+
+    #     total_prob = sum(path_length_prob.values())
+    #     path_length_prob = {k: v / total_prob
+    #                     for k, v in path_length_prob.items()}
+    #     path_entropy = -sum(prob * np.log(prob)
+    #                     for prob in path_length_prob.values())
+    #     return path_entropy
+
     @classmethod
     def calculate_path_length_entropy(cls, graph: nx.DiGraph) -> float:
         path_length_prob: Dict[int, float] = {}
@@ -70,7 +106,8 @@ class TaskFeatures:
         G = graph_data.graph
         entropy = cls.calculate_entropy(G)
         mutual_info = cls.calculate_mutual_information(G)
-        path_length_entropy = cls.calculate_path_length_entropy(G)
+        # path_length_entropy = cls.calculate_path_length_entropy(G)
+        # print("Path length entropy calculated", path_length_entropy)
         # calculate the sum of weight*indegree for each node
         weighted_sum_of_indegree = {}
         for node in G:
@@ -86,7 +123,8 @@ class TaskFeatures:
             id=graph_data.id,
             subtask_dependency_index=overall_SDI,
             node_degree_entropy=entropy,
-            path_length_entropy=path_length_entropy,
+            # path_length_entropy (complicated to calculate)
+            path_length_entropy=0,
             mutual_information=mutual_info,
         )
         return t_features

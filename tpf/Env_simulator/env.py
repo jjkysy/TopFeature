@@ -1,6 +1,10 @@
+import logging
+
 import numpy as np
 from shapely.affinity import scale
 from shapely.geometry import Point, Polygon
+
+logging.basicConfig(level=logging.INFO)
 
 
 class Env:
@@ -12,7 +16,9 @@ class Env:
         velocity,
         initial_boundary_width,
         expansion_times,
+        rdn_seed=None,
     ):
+        self.random_state = np.random.RandomState(rdn_seed)
         self.radius = radius
         self.velocity = velocity
         self.width = width
@@ -22,7 +28,11 @@ class Env:
         self.hole_x, self.hole_y = (
             self.generate_random_position_within_boundary()
         )
-        self.direction = np.random.uniform(0, 2 * np.pi)
+        logging.info(
+            f"Generated Target Initial Hole Position:"
+            f"({self.hole_x}, {self.hole_y})"
+        )
+        self.direction = self.random_state.uniform(0, 2 * np.pi)
         self.expansion_times = expansion_times
         self.state_transition_matrix = (
             self.initialize_state_transition_matrix()
@@ -44,8 +54,8 @@ class Env:
     def generate_random_position_within_boundary(self):
         min_x, min_y, max_x, max_y = self.boundary.bounds
         while True:
-            x = np.random.uniform(min_x, max_x)
-            y = np.random.uniform(min_y, max_y)
+            x = self.random_state.uniform(min_x, max_x)
+            y = self.random_state.uniform(min_y, max_y)
             point = Point(x, y)
             if self.boundary.contains(point):
                 return x, y

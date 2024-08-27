@@ -1,8 +1,11 @@
+import logging
 from typing import Tuple
 
 import numpy as np
 from interface import AgentData, ContiAgent
 from shapely.geometry import Point, Polygon
+
+logging.basicConfig(level=logging.INFO)
 
 
 class Agent:
@@ -73,6 +76,7 @@ class _Agent:
         position = cls.generate_random_position_within_polygon(boundary)
         direction = np.random.uniform(0, 2 * np.pi)
         speed = np.random.uniform(1, 2)
+        # logging.info(f"Agent {agent_id} created at {position}")
         return ContiAgent(agent_id, position, direction, speed, boundary)
 
     @staticmethod
@@ -124,22 +128,46 @@ class _Agent:
     def update_omega_matrix(
         omega_matrix: np.ndarray,
         hits_info: dict,
-        increase_factor=0.01,
+        agents: list[ContiAgent],
+        increase_factor=1,
         decay_factor=0.01,
     ) -> Tuple[float, np.ndarray]:
         old_omega_matrix = np.copy(omega_matrix)
         total_change = 0
 
+        # print(hits_info)
+        boundary = agents[0].boundary
+        min_x, min_y, max_x, max_y = boundary.bounds
+        max_distance = np.sqrt((max_x - min_x) ** 2 + (max_y - min_y) ** 2)
+
         for agent_id in range(omega_matrix.shape[0]):
             for neighbor_id in range(omega_matrix.shape[1]):
                 if agent_id != neighbor_id:
                     if agent_id in hits_info:
-                        omega_matrix[agent_id][neighbor_id] += increase_factor
+                        if neighbor_id in hits_info:
+                            distance = agents[agent_id].position.distance(
+                                agents[neighbor_id].position
+                            )
+                            normalized_distance = distance / max_distance
+                            omega_matrix[agent_id][neighbor_id] += (
+                                increase_factor
+                                * normalized_distance  # * hit_factor
+                            )
+                        else:
+                            omega_matrix[agent_id][
+                                neighbor_id
+                            ] += increase_factor
+
                     else:
-                        omega_matrix[agent_id][neighbor_id] *= 1 - decay_factor
+                        if np.random.rand() < 0.1:  # 10% possibility to decay
+                            omega_matrix[agent_id][neighbor_id] *= (
+                                1 - decay_factor
+                            )
                     total_change += abs(
                         omega_matrix[agent_id][neighbor_id]
                         - old_omega_matrix[agent_id][neighbor_id]
                     )
 
+        # row_sums = omega_matrix.sum(axis=1)
+        # omega_matrix = omega_matrix / row_sums[:, np.newaxis]
         return total_change, omega_matrix

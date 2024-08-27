@@ -24,6 +24,8 @@ class TaskFeatureEvaluator:
         )
         cvs = np.std(feature_values, ddof=1) / np.mean(feature_values)
         dependency = np.mean(cvs)
+
+        # dependency = task_feature.subtask_dependency_index
         return dependency
 
     @classmethod
@@ -32,8 +34,8 @@ class TaskFeatureEvaluator:
         Evaluate the uncertainty of the graph
         """
         # TODO: consider entropy for now, may need more features
-        # uncertainty = task_feature.node_degree_entropy
-        uncertainty = task_feature.path_length_entropy
+        uncertainty = task_feature.node_degree_entropy
+        # uncertainty = task_feature.path_length_entropy
         return uncertainty
 
     @classmethod

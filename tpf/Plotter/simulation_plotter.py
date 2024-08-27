@@ -1,24 +1,38 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 
 
-def plot_hits(num_steps, *cumulative_hits_over_time, save_path):
+def moving_average(data, window_size):
+    return np.convolve(data, np.ones(window_size) / window_size, mode="valid")
+
+
+def plot_hits(
+    num_steps, *cumulative_hits_over_time, save_path, window_size=50
+):
     sns.set_theme(style="whitegrid")
 
     colors = ["b", "g", "r", "c", "m", "y"]
     labels = [
         "No Topology",
-        "Mesh Topology(10%)",
-        "Mesh Topology(50%)",
-        "Mesh Topology(90%)",
-        "Star Topology",
-        "Chain Topology",
+        "Batch size a",
+        "Batch size b",
+        "Batch size c",
+        "Batch size d",
+        "Batch size e",
     ]
 
     for hits, color, label in zip(cumulative_hits_over_time, colors, labels):
+        hits = np.array(hits)
+        smoothed_hits = moving_average(hits, window_size)
+
+        # Here we assume a ±10% range as an example
+        # std_deviation = hits * 0.05
         plt.plot(
-            range(num_steps),
-            hits,
+            # range(num_steps),
+            # hits,
+            range(len(smoothed_hits)),
+            smoothed_hits,
             marker="o",
             markersize=1,
             linestyle="-",
@@ -26,6 +40,15 @@ def plot_hits(num_steps, *cumulative_hits_over_time, save_path):
             color=color,
             label=label,
         )
+
+        # # Adding shaded area for the standard deviation
+        # plt.fill_between(
+        #     range(num_steps),
+        #     hits - std_deviation,
+        #     hits + std_deviation,
+        #     color=color,
+        #     alpha=0.2,
+        # )
 
     plt.xlabel("Time Step")
     plt.ylabel("Cumulative Hits")
@@ -49,11 +72,11 @@ def plot_max_hits(agent_counts_list, max_hits_list, save_path):
     colors = ["b", "g", "r", "c", "m", "y"]
     labels = [
         "No Topology",
-        "Mesh Topology(10%)",
-        "Mesh Topology(50%)",
-        "Mesh Topology(90%)",
-        "Star Topology",
-        "Chain Topology",
+        "Batch size a",
+        "Batch size b",
+        "Batch size c",
+        "Batch size d",
+        "Batch size e",
     ]
 
     # range is the length of each tuple in the max_hits_list
