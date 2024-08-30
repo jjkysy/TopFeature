@@ -28,7 +28,9 @@ class FeatureAnalyse:
         for index, row in self.graph_list.iterrows():
             graph = row["data"]
             topo = row["topology"]
+            # print(f"Calculating features for {topo}")
             task_features = Tf.calculate_features(graph)
+            # print("Features:", task_features)
             feature_list.append({"topology": topo, "feature": task_features})
         df_task_feature = pd.DataFrame(feature_list)
         save_file(df_task_feature, f"{self.storage_path}task_features.pkl")

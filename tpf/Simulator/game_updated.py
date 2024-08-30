@@ -1,3 +1,7 @@
+# use pruned adjacency matrix to simulate the needle throwing game
+# can refer to game.py
+# only difference is omega will not change
+
 import logging
 from typing import List, Tuple
 
@@ -5,7 +9,8 @@ import numpy as np
 from Agent_simulator.agent import _Agent  # Agent
 from Agent_simulator.update_strategy import Para_update_strategies as Opinion
 from Env_simulator.env import Env
-from Plotter.simulation_plotter import plot_convergence
+
+# from Plotter.simulation_plotter import plot_convergence
 from shapely.geometry import Point
 from utils import calculate_hits
 
@@ -14,26 +19,24 @@ logging.basicConfig(level=logging.INFO)
 save_path_dict = {
     "simulation": "plots/simulation_plots/",
     "task_matrix": "stats/task_matrix/",
-    "omega_matrix": "stats/omega_matrix/",
+    "pruned_matrix": "stats/pruned_matrix/",
     "hits": "stats/hits/",
 }
+
+omega_matrix = np.load(save_path_dict["pruned_matrix"] + "pruned_50.npy")
 
 
 def update_agents(
     agents: List[_Agent],
     len_agents: int,
     omega_matrix: np.ndarray,
-    hits_info: List[dict],
-    temp_matrix: np.ndarray,
 ) -> Tuple[float, np.ndarray]:
     for agent in agents:
-        Opinion.FJ_update_parameters(
-            agent, len_agents, omega_matrix, agents, temp_matrix
+        Opinion.FJ_update_parameters_adapt(
+            agent, len_agents, omega_matrix, agents
         )
-    change_in_this_step, omega_matrix = _Agent.update_omega_matrix(
-        omega_matrix, hits_info, agents
-    )
-    return change_in_this_step, omega_matrix
+
+    return 0.0, np.zeros((len_agents, len_agents))
 
 
 def run_simulation(
@@ -82,13 +85,11 @@ def run_simulation(
     total_hits = [0] * total_group_number
 
     omega_matrices = [
-        np.ones((num_agents, num_agents)) for _ in range(training_group_number)
+        np.load(save_path_dict["pruned_matrix"] + f"pruned_{num_agents}.npy")
+        for _ in range(training_group_number)
     ]
-    for omega_matrix in omega_matrices:
-        np.fill_diagonal(omega_matrix, 0)
 
     expansion_factor = expansion_times ** (1 / num_steps)
-    changes_per_step = []
 
     # create agents: groups of dynamic agents and 1 group of static agents
     dynamic_agents = [
@@ -144,69 +145,38 @@ def run_simulation(
             old_position.x, old_position.y, new_position.x, new_position.y
         )
 
-        # update agents with omega matrix, and calculate change in this step
-        change_in_this_step = 0
-        temp_matrix_list = create_adjcacency_matrix(
-            num_agents, link_percentage_list
-        )
-        change = [0] * training_group_number
         for i, group in enumerate(dynamic_agents_groups):
-            change[i], omega_matrices[i] = update_agents(
+            update_agents(
                 group,
                 num_agents,
                 omega_matrices[i],
-                hits_info[i],
-                temp_matrix_list[i],
             )
-        change_in_this_step += change[-1]  # last group
-        changes_per_step.append(
-            change_in_this_step  # / len(dynamic_agents_groups)
-        )
+
         # print(omega_matrices[-1])
 
-    # save the final omega matrix, which is a list of 5 matrices
-    for i, omega_matrix in enumerate(omega_matrices):
-        np.save(
-            save_path_dict["omega_matrix"]
-            + f"omega_matrix_{link_percentage_list[i]}"
-            + f"_{num_agents}.npy",
-            omega_matrix,
-        )
-        logging.info(
-            f"Omega matrix saved at {save_path_dict['omega_matrix']}"
-            f"omega_matrix_{link_percentage_list[i]}_{num_agents}.npy"
-        )
-
-    # plot the convergence graph with change per step
-    save_path = (
-        save_path_dict["simulation"] + "convergence" + f"_{num_agents}.png"
-    )
-    plot_convergence(num_steps, changes_per_step, save_path)
-    logging.info(
-        f"Convergence plot saved at {save_path_dict['simulation']}convergence_"
-        f"{num_agents}.png"
-    )
-
     # save task matrix and check its properties
+    # now, no need to save but only check if it is same with the previous one
     task_matrix = env.state_transition_matrix
     assert not np.all(task_matrix == 0)
     for row in task_matrix:
         assert np.sum(row) == 1 or np.sum(row) == 0
-    np.save(
-        save_path_dict["task_matrix"] + str(num_agents) + ".npy", task_matrix
+
+    previous_task_matrix = np.load(
+        save_path_dict["task_matrix"] + str(num_agents) + ".npy"
     )
-    logging.info(
-        f"Task matrix saved at {save_path_dict['task_matrix']}{num_agents}.npy"
-    )
+    assert np.all(task_matrix == previous_task_matrix)
+
+    logging.info("Task matrix same as previous one")
 
     # also save the cumulative_hits_over_time
     np.save(
-        save_path_dict["hits"] + f"cumulative_hits_over_time_{num_agents}.npy",
+        save_path_dict["hits"]
+        + f"optimized_cumulative_hits_over_time_{num_agents}.npy",
         cumulative_hits_over_time,
     )
     logging.info(
         f"Cumulative hits over time saved at {save_path_dict['hits']}"
-        f"cumulative_hits_over_time_{num_agents}.npy"
+        f"optimized_cumulative_hits_over_time_{num_agents}.npy"
     )
 
     # return cumulative hits over time and max hits

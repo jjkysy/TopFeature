@@ -6,8 +6,7 @@
 
 
 import numpy as np
-
-from tpf.interface import GraphEval, GraphFeatures
+from interface import GraphEval, GraphFeatures
 
 
 class MASFeatureEvaluator:

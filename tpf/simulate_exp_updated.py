@@ -1,8 +1,8 @@
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-from Plotter.simulation_plotter import plot_hits, plot_max_hits
-from Simulator.game import run_simulation
+from Plotter.simulation_plotter import plot_hits
+from Simulator.game_updated import run_simulation
 
 logging.basicConfig(level=logging.INFO)
 
@@ -15,8 +15,13 @@ params = {
     "dt": 1,
     "num_steps": 2000,
     "expansion_times": 5,
-    "link_percentage_list": [0.005, 0.01, 0.05, 0.1, 0.5],
-    # [0.001, 0.005, 0.01], # batch size percentage
+    "link_percentage_list": [
+        0.005,
+        0.01,
+        0.05,
+        0.1,
+        0.5,
+    ],  # batch size percentage
 }
 
 num_agents_list = [50, 100, 200, 300]  # 10, 30, 50
@@ -51,7 +56,7 @@ def main():
                     params["num_steps"],
                     *cumulative_hits_over_time,
                     save_path=(
-                        f"plots/simulation_plots/"
+                        f"plots/optimized_plots/"
                         f"cumulative_hits_over_time_{num_agents}.png"
                     ),
                 )
@@ -61,11 +66,11 @@ def main():
                     f"generated an exception: {exc}"
                 )
 
-    plot_max_hits(
-        agent_counts_list,
-        max_hits_list,
-        save_path="plots/simulation_plots/max_hits.png",
-    )
+    # plot_max_hits(
+    #     agent_counts_list,
+    #     max_hits_list,
+    #     save_path="plots/simulation_plots/max_hits.png",
+    # )
 
 
 if __name__ == "__main__":

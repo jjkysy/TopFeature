@@ -1,3 +1,6 @@
+# TODO: finish the logic in create a different environment
+# like 8 sided polygon or a circle
+
 import logging
 
 import numpy as np
@@ -7,7 +10,7 @@ from shapely.geometry import Point, Polygon
 logging.basicConfig(level=logging.INFO)
 
 
-class Env:
+class Env_complex:
     def __init__(
         self,
         width,
@@ -24,7 +27,7 @@ class Env:
         self.width = width
         self.height = height
         self.initial_boundary_width = initial_boundary_width
-        self.boundary = self.create_square_boundary()
+        self.boundary = self.create_complex_boundary()
         self.hole_x, self.hole_y = (
             self.generate_random_position_within_boundary()
         )
@@ -39,17 +42,29 @@ class Env:
         )
         self.time_step = 0
 
-    def create_square_boundary(self):
-        side_length = self.initial_boundary_width
-        square = Polygon(
-            [
-                (-side_length / 2, -side_length / 2),
-                (side_length / 2, -side_length / 2),
-                (side_length / 2, side_length / 2),
-                (-side_length / 2, side_length / 2),
-            ]
-        )
-        return square
+    def create_complex_boundary(self):
+        # 生成一个复杂的多边形边界
+        points = [
+            (
+                -self.initial_boundary_width / 2,
+                -self.initial_boundary_width / 2,
+            ),
+            (0, -self.initial_boundary_width / 4),
+            (
+                self.initial_boundary_width / 2,
+                -self.initial_boundary_width / 2,
+            ),
+            (self.initial_boundary_width / 2, 0),
+            (self.initial_boundary_width / 4, self.initial_boundary_width / 2),
+            (0, self.initial_boundary_width / 4),
+            (
+                -self.initial_boundary_width / 4,
+                self.initial_boundary_width / 2,
+            ),
+            (-self.initial_boundary_width / 2, 0),
+        ]
+        complex_polygon = Polygon(points)
+        return complex_polygon
 
     def generate_random_position_within_boundary(self):
         min_x, min_y, max_x, max_y = self.boundary.bounds
